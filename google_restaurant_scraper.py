@@ -50,9 +50,10 @@ if __name__ == '__main__':
         with open(args.i, 'r') as urls_file:
             for url in urls_file:
 
-                error = scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
+                #error = scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
+                    scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
 
-                if error == 0:
+                #if error == 0:
 
                     n = 0
 

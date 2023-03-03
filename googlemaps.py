@@ -80,45 +80,62 @@ class GoogleMapsScraper:
 
         return 0
 
+    # Leaving as optional as we don't need to sort restaurants
     def sort_restaurants(self, url, ind):
 
         self.driver.get(url)
-        self.__click_on_cookie_agreement()
+        status = self.__click_on_cookie_agreement()
+
+        if status:
+            print('cookie page bypassed')
 
         wait = WebDriverWait(self.driver, MAX_WAIT)
 
-        # open dropdown menu
-        clicked = False
-        tries = 0
-        while not clicked and tries < MAX_RETRY:
-            try:
-                # TODO - this code seems kind of useless
-                restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-                restaurant_list.send_keys(Keys.UP)
+        # open price menu
+        # clicked = False
+        # tries = 0
+        # while not clicked and tries < MAX_RETRY:
+        #     try:
+        #         # TODO - this code seems kind of useless
+        #         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
+        #         restaurant_list.send_keys(Keys.UP)
+        #
+        #         # agree = WebDriverWait(self.driver, 10).until(
+        #         #     EC.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Reject all")]')))
+        #         # TODO - figure out alternative
+        #         #menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@class=\"e2moi \"]')))
+        #         menu_bt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "//button[onclick='CookieInformation.submitAllCategories();')]")))
+        #
+        #         price_tag = self.driver.find_element("xpath", '//span[contains(text(), "Price")]')
+        #         # seems that it is_enabled() but not is_displayed()
+        #
+        #         rating_tag = self.driver.find_element("xpath", '//span[contains(text(), "Rating")]')
+        #
+        #         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
+        #         # restaurant list is displayed and enabled
+        #
+        #
+        #         menu_bt.click()
+        #
+        #         clicked = True
+        #         time.sleep(3)
+        #     except Exception as e:
+        #         tries += 1
+        #         self.logger.warn('Failed to click sorting button')
+        #
+        #     # failed to open the dropdown
+        #     if tries == MAX_RETRY:
+        #         return -1
 
-                # TODO - figure out alternative
-                menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@class=\"e2moi\"]')))
-                menu_bt.click()
-
-                clicked = True
-                time.sleep(3)
-            except Exception as e:
-                tries += 1
-                self.logger.warn('Failed to click sorting button')
-
-            # failed to open the dropdown
-            if tries == MAX_RETRY:
-                return -1
-
-        #  element of the list specified according to ind
-        # TODO refactor 1 - Update selenium functionality
-        # recent_rating_bt = self.driver.find_elements_by_xpath('//div[@role=\'menuitemradio\']')[ind]
-        # NOTE - look for id='hovercard'
-        recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'checkbox\']')[ind]
-        recent_rating_bt.click()
-
-        # wait to load review (ajax call)
-        time.sleep(5)
+        # #  element of the list specified according to ind
+        # # TODO refactor 1 - Update selenium functionality
+        # # recent_rating_bt = self.driver.find_elements_by_xpath('//div[@role=\'menuitemradio\']')[ind]
+        # # NOTE - look for id='hovercard'
+        # recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'checkbox\']')[ind]
+        # recent_rating_bt.click()
+        #
+        # # wait to load review (ajax call)
+        # time.sleep(5)
 
         return 0
 
@@ -131,14 +148,15 @@ class GoogleMapsScraper:
 
         self.__scroll()
 
+        # TODO - figure out div which contains location data - this can't find it
+        #location = self.driver.find_element('css selector', 'div.Io6YTe.fontBodyMedium')
 
         # expand review text
         self.__expand_reviews()
 
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
-        # TODO - figure out div which contains location data
-        location = self.driver.find_element('css selector', 'class=Io6YTe fontBodyMedium')
+
         rblock = response.find_all('div', class_='jftiEf fontBodyMedium')
         parsed_reviews = []
         for index, review in enumerate(rblock):

@@ -1,23 +1,18 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+import logging
+import time
+import timeit
+import traceback
+from datetime import datetime
+
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
-from datetime import datetime
-import time
-import re
-import logging
-import traceback
-import numpy as np
-import itertools
-
 
 GM_WEBPAGE = 'https://www.google.com/maps/'
 MAX_WAIT = 10
@@ -89,7 +84,7 @@ class GoogleMapsScraper:
         if status:
             print('cookie page bypassed')
 
-        wait = WebDriverWait(self.driver, MAX_WAIT)
+        #wait = WebDriverWait(self.driver, MAX_WAIT)
 
         # open price menu
         # clicked = False
@@ -179,23 +174,55 @@ class GoogleMapsScraper:
 
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
-        # TODO: Add a buffer to scroll before searching
-        # https://stackoverflow.com/questions/20986631/how-can-i-scroll-a-web-page-using-selenium-webdriver-in-python
 
-        # # option 1 - nope
-        # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        #
-        # # option 2 - nope
-        # html = self.driver.find_element(By.TAG_NAME, 'html')
-        # html.send_keys(Keys.END)
-
-        # option 3 - 'no such element'
-        # last_review = self.driver.find_element('css selector', 'div.gws-localreviews__google-review:last-of-type')
-        # self.driver.execute_script('arguments[0].scrollIntoView(true);', last_review)
-
-        # option 4 - unable to locate element
+        # doesn't do anything yet
         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        restaurant_list.send_keys(Keys.END)
+        restaurant_list.send_keys(Keys.ARROW_DOWN)
+
+        # Can't find the bottom of the page it seems (class = m6QErb tLjsW eKbjU)
+        # back_to_top = self.driver.find_element('css selector', 'div.m6QErb.tLjsW.eKbjU')
+        # self.driver.execute_script("arguments[0].scrollIntoView(true);", back_to_top)
+
+        # https://medium.com/codex/how-i-web-scraped-my-custom-google-maps-list-into-a-csv-file-eb1172a85bf4
+        # TODO - working now - comment out logging of scroll progress
+
+        ## Function to scroll the side bar down to the end
+        start = timeit.default_timer()
+
+        # identify scrolling element first
+        scrolling_element_xpath = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div[1]'
+        scrolling_element = self.driver.find_element('xpath', scrolling_element_xpath)
+
+        ## need to find a way to keep scrolling until end without specifying
+        SCROLL_PAUSE_TIME = 2.0
+
+        # Get scroll height
+        last_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
+        print(last_height)
+
+        t = 0
+        while True:
+            print(t)
+            t = t + 1
+            # Scroll down to bottom
+            self.driver.execute_script('arguments[0].scrollTo(0, arguments[0].scrollHeight)', scrolling_element)
+
+            # Wait to load page
+            time.sleep(SCROLL_PAUSE_TIME)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
+            print(new_height)
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        stop = timeit.default_timer()
+
+        print('Time taken: ', stop - start)
+
+        # THE CODE WORKS
+        #back_to_top = self.driver.find_element('xpath', "/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div[1]/div[243]/div/p/span/span[1]")
 
         rblock = response.find_all('div', class_='Nv2PK THOPZb CpccDe')
         parsed_restaurants = []
@@ -356,6 +383,7 @@ class GoogleMapsScraper:
     def __scroll_restaurant(self):
         # TODO - add a scroller - https://stackoverflow.com/questions/20986631/how-can-i-scroll-a-web-page-using-selenium-webdriver-in-python
         scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
+        #driver.execute_script("window.scrollTo(0, document.body.scrollHeight);", scrollable_div)
         self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', scrollable_div)
         # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
@@ -378,7 +406,6 @@ class GoogleMapsScraper:
         logger.addHandler(fh)
 
         return logger
-
 
     def __get_driver(self, debug=False):
         options = Options()

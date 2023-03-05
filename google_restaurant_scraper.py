@@ -49,7 +49,7 @@ if __name__ == '__main__':
     with GoogleMapsScraper(debug=args.debug) as scraper:
         with open(args.i, 'r') as urls_file:
             for url in urls_file:
-
+                # TODO - At this point it's not sorting the restaurants, just clicking through the cookies
                 #error = scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
                     scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
 

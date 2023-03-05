@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-from googlemaps import GoogleMapsScraper
-from datetime import datetime, timedelta
 import argparse
 import csv
-from termcolor import colored
 import os
-import time
+from datetime import datetime
+
+from termcolor import colored
+
+from googlemaps import GoogleMapsScraper
 
 #https://sites.google.com/site/tomihasa/google-language-codes
 
-# ind = {'relevance' : 0 , 'distance' : 1}
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
 # TODO - add a filter dictionary for 1. price tags, 2. cuisine, and maybe 3. cuisine?
 HEADER = ['restaurant_name', 'restaurant_url']
 HEADER_W_SOURCE = ['restaurant_name', 'restaurant_url', 'url_source']
 
 
-def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/diss_project/output'):
-    outfile= str(datetime.now().date()) + '_list_of_restaurants.csv'
+def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):
+    outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
 
@@ -32,8 +32,7 @@ def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Document
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
-    # TODO - figure out why 100 restaurants does not work
-    parser.add_argument('--N', type=int, default=10, help='Number of restaurants to scrape')
+    parser.add_argument('--N', type=int, default=10, help='Number of cinema to scrape')
     parser.add_argument('--i', type=str, default='input/urls_location.txt', help='target URLs files')
     parser.add_argument('--sort_by', type=str, default='£', help='most_relevant or closest')
     parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
@@ -49,28 +48,26 @@ if __name__ == '__main__':
     with GoogleMapsScraper(debug=args.debug) as scraper:
         with open(args.i, 'r') as urls_file:
             for url in urls_file:
-                # TODO - At this point it's not sorting the restaurants, just clicking through the cookies
-                #error = scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
-                    scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
 
-                #if error == 0:
+                # TODO - At this point it's not sorting the cinemas, just clicking through the cookies
+                scraper.sort_restaurants(url, price_filter_dict[args.sort_by])
 
-                    n = 0
+                n = 0
 
-                    while n < args.N:
+                while n < args.N:
 
-                        # logging to std out
-                        print(colored('[Restaurants collected: ' + str(n) + ']', 'cyan'))
+                    # logging to std out
+                    print(colored('[ Cinemas collected: ' + str(n) + ']', 'cyan'))
 
-                        reviews = scraper.get_restaurants(n)
-                        if len(reviews) == 0:
-                            break
+                    reviews = scraper.get_restaurants(n)
+                    if len(reviews) == 0:
+                        break
 
-                        for r in reviews:
-                            row_data = list(r.values())
-                            if args.source:
-                                row_data.append(url[:-1])
+                    for r in reviews:
+                        row_data = list(r.values())
+                        if args.source:
+                            row_data.append(url[:-1])
 
-                            writer.writerow(row_data)
+                        writer.writerow(row_data)
 
-                        n += len(reviews)
+                    n += len(reviews)

@@ -122,16 +122,6 @@ class GoogleMapsScraper:
         #     if tries == MAX_RETRY:
         #         return -1
 
-        # #  element of the list specified according to ind
-        # # TODO refactor 1 - Update selenium functionality
-        # # recent_rating_bt = self.driver.find_elements_by_xpath('//div[@role=\'menuitemradio\']')[ind]
-        # # NOTE - look for id='hovercard'
-        # recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'checkbox\']')[ind]
-        # recent_rating_bt.click()
-        #
-        # # wait to load review (ajax call)
-        # time.sleep(5)
-
         return 0
 
     def get_reviews(self, offset):
@@ -202,7 +192,7 @@ class GoogleMapsScraper:
 
         t = 0
         while True:
-            print(t)
+            # print(t)
             t = t + 1
             # Scroll down to bottom
             self.driver.execute_script('arguments[0].scrollTo(0, arguments[0].scrollHeight)', scrolling_element)
@@ -212,7 +202,7 @@ class GoogleMapsScraper:
 
             # Calculate new scroll height and compare with last scroll height
             new_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
-            print(new_height)
+            # print(new_height)
             if new_height == last_height:
                 break
             last_height = new_height

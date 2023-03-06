@@ -12,66 +12,26 @@ from googlemaps import GoogleMapsScraper
 
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
 # TODO - add a filter dictionary for 1. price tags, 2. cuisine, and maybe 3. cuisine?
-HEADER = ['restaurant_name', 'restaurant_url']
-HEADER_W_SOURCE = ['restaurant_name', 'restaurant_url', 'url_source']
+HEADER = ['cinema_name', 'cinema_url', 'postcode_category']
+HEADER_W_SOURCE = ['cinema_name', 'cinema_url', 'postcode_category', 'url_source']
 
-## TODO - Refactor/test this to get review date:
-"""
-You're right, the method I mentioned earlier only yields the relative date like '2 weeks ago'. To get the exact date of 
-a Google review, you can use the selenium package to automate the process of opening a review and retrieving the review 
-date.
+LIST_OF_NON_LONDON_POSTCODE_CATEGORIES = ['St Albans', 'Brighton', 'Bromley', 'Cambridge', 'Chelmsford', 'Colchester', 'Croydon',
+                     'Canterbury', 'Dartford', 'Enfield', 'Guildford', 'Harrow', 'Hemel Hempstead', 'Ilford',
+                     'Kingston upon Thames', 'Rochester', 'Milton Keynes', 'Northampton', 'Oxford', 'Portsmouth',
+                     'Reading', 'Redhill', 'Romford', 'Stevenage', 'Slough', 'Sutton', 'Swindon', 'Southampton',
+                     'Southend-on-Sea', 'Tonbridge', 'Twickenham', 'Southall', 'Watford', 'Bath', 'Bournemouth',
+                     'Bristol', 'Dorchester', 'Exeter', 'Gloucester', 'Hereford', 'Plymouth', 'Swindon', 'Salisbury',
+                     'Taunton', 'Torquay', 'Truro', 'Cambridge', 'Chelmsford', 'Colchester', 'Ipswich', 'Norwich',
+                     'Peterborough', 'Stevenage', 'Southend-on-Sea', 'Birmingham', 'Coventry', 'Dudley', 'Hereford',
+                     'Llandrindod Wells', 'Stoke-on-Trent', 'Shrewsbury', 'Telford', 'Worcester', 'Walsall',
+                     'Wolverhampton', 'Derby', 'Leicester', 'Lincoln', 'Nottingham', 'Northampton', 'Bradford',
+                     'Doncaster', 'Huddersfield', 'Harrogate', 'Hull', 'Leeds', 'Sheffield', 'Wakefield', 'York',
+                     'Durham', 'Darlington', 'Newcastle upon Tyne', 'Sunderland', 'Cleveland']
 
-Here's an example of how to get the exact date of a Google review using selenium:
-"""
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import datetime
+LIST_OF_LONDON_POSTCODES_CATEGORIES = ['Central London', 'East London', 'North London', 'Northeast London', 'Northwest London',
+                            'Southeast London', 'Southwest London', 'West London']
 
-# initialize webdriver
-driver = webdriver.Chrome('/path/to/chromedriver')
-
-# navigate to the Google Maps review page
-driver.get('https://www.google.com/maps/place/...')
-
-# wait for the reviews to load
-reviews_section = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.CLASS_NAME, 'section-review'))
-)
-
-# find the review you want to scrape and click on it
-review = reviews_section.find_elements_by_class_name('section-review')[0]
-review.click()
-
-# wait for the review details to load
-review_details = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.CLASS_NAME, 'section-review-content'))
-)
-
-# extract the review date
-date_element = review_details.find_element_by_class_name('section-review-publish-date')
-date_text = date_element.get_attribute('innerHTML')
-date = datetime.datetime.strptime(date_text, '%b %d, %Y').date()
-
-# print the date in YYYY-MM-DD format
-print(date.strftime('%Y-%m-%d'))
-
-# close the webdriver
-driver.quit()
-"""
-#In this example, we use selenium to automate the process of opening a Google Maps review page and retrieving the review 
-date. After navigating to the review page, we wait for the reviews to load using WebDriverWait. We then find the review 
-we want to scrape and click on it to open the review details. After waiting for the review details to load, we extract 
-the review date by finding the HTML element that contains the date information and getting the innerHTML of that element. 
-We then convert the date text into a datetime object using strptime and extract the date using the date() method. Finally, 
-we print the date in YYYY-MM-DD format and close the webdriver.
-
-#Note that this approach can be slower than using BeautifulSoup and requires more code, but it allows you to extract 
-more detailed information about each review, including the exact date and other metadata. Also note that as mentioned 
-earlier, Google Maps terms of service prohibit web scraping, so make sure to use this information only for personal or 
-non-commercial use, and be respectful of Google's terms of service.
-"""
+ALL_POSTCODE_CATEGORIES = LIST_OF_LONDON_POSTCODES_CATEGORIES + LIST_OF_NON_LONDON_POSTCODE_CATEGORIES
 
 def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):
     outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
@@ -105,26 +65,28 @@ if __name__ == '__main__':
     with GoogleMapsScraper(debug=args.debug) as scraper:
         with open(args.i, 'r') as urls_file:
             for url in urls_file:
+                for postcode_category in LIST_OF_LONDON_POSTCODES_CATEGORIES:
 
-                # TODO - At this point it's not sorting the cinemas, just clicking through the cookies
-                scraper.bypass_cookies(url, price_filter_dict[args.sort_by])
+                    url = url.replace('%l', postcode_category).replace(' ', '+')
+                    print(url)
+                    scraper.bypass_cookies(url, price_filter_dict[args.sort_by])
 
-                n = 0
+                    n = 0
 
-                while n < args.N:
+                    while n < args.N:
 
-                    # logging to std out
-                    print(colored('[ Cinemas collected: ' + str(n) + ']', 'cyan'))
+                        # logging to std out
+                        print(colored('[ Cinemas collected: ' + str(n) + ']', 'cyan'))
 
-                    reviews = scraper.get_restaurants(n)
-                    if len(reviews) == 0:
-                        break
+                        reviews = scraper.get_cinemas(n, postcode_category)
+                        if len(reviews) == 0:
+                            break
 
-                    for r in reviews:
-                        row_data = list(r.values())
-                        if args.source:
-                            row_data.append(url[:-1])
+                        for r in reviews:
+                            row_data = list(r.values())
+                            if args.source:
+                                row_data.append(url[:-1])
 
-                        writer.writerow(row_data)
+                            writer.writerow(row_data)
 
-                    n += len(reviews)
+                        n += len(reviews)

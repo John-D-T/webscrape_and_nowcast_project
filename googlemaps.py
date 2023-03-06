@@ -51,6 +51,7 @@ class GoogleMapsScraper:
         tries = 0
         while not clicked and tries < MAX_RETRY:
             try:
+                #obtaining location
                 location = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[9]/div[3]/button/div[1]/div[2]/div[1]'
                 location = self.driver.find_element('xpath', location).text
 
@@ -74,15 +75,13 @@ class GoogleMapsScraper:
                 return -1
 
         #  element of the list specified according to ind
-        # TODO refactor 1 - Update selenium functionality
-        #recent_rating_bt = self.driver.find_elements_by_xpath('//div[@role=\'menuitemradio\']')[ind]
         recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'menuitemradio\']')[ind]
         recent_rating_bt.click()
 
         # wait to load review (ajax call)
         time.sleep(5)
 
-        return 0
+        return 0, location
 
     # Leaving as optional as we don't need to sort restaurants
     def bypass_cookies(self, url, ind):
@@ -131,7 +130,7 @@ class GoogleMapsScraper:
 
         return 0
 
-    def get_reviews(self, offset):
+    def get_reviews(self, offset, location, cinema_name):
 
         # scroll to load reviews
 
@@ -139,9 +138,6 @@ class GoogleMapsScraper:
         time.sleep(4)
 
         self.__scroll()
-
-        # TODO - figure out div which contains location data - this can't find it
-        #location = self.driver.find_element('css selector', 'div.Io6YTe.fontBodyMedium')
 
         # expand review text
         self.__expand_reviews()
@@ -153,21 +149,21 @@ class GoogleMapsScraper:
         parsed_reviews = []
         for index, review in enumerate(rblock):
             if index >= offset:
-                parsed_reviews.append(self.__parse_reviews(review))
+                parsed_reviews.append(self.__parse_reviews(review, location, cinema_name))
 
                 # logging to std out
-                print(self.__parse_reviews(review))
+                print(self.__parse_reviews(review, location, cinema_name))
 
         return parsed_reviews
 
-    def get_restaurants(self, offset):
+    def get_cinemas(self, offset, postcode_category):
 
         # scroll to load restaurants
 
         # wait for other reviews to load (ajax)
         time.sleep(4)
 
-        self.__scroll_restaurant()
+        self.__scroll_cinema()
 
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -175,13 +171,6 @@ class GoogleMapsScraper:
         # doesn't do anything yet
         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
         restaurant_list.send_keys(Keys.ARROW_DOWN)
-
-        # Can't find the bottom of the page it seems (class = m6QErb tLjsW eKbjU)
-        # back_to_top = self.driver.find_element('css selector', 'div.m6QErb.tLjsW.eKbjU')
-        # self.driver.execute_script("arguments[0].scrollIntoView(true);", back_to_top)
-
-        # https://medium.com/codex/how-i-web-scraped-my-custom-google-maps-list-into-a-csv-file-eb1172a85bf4
-        # TODO - working now - comment out logging of scroll progress
 
         ## Function to scroll the side bar down to the end
         start = timeit.default_timer()
@@ -218,17 +207,14 @@ class GoogleMapsScraper:
 
         print('Time taken: ', stop - start)
 
-        # THE CODE WORKS
-        #back_to_top = self.driver.find_element('xpath', "/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div[1]/div[243]/div/p/span/span[1]")
-
         rblock = response.find_all('div', class_='Nv2PK THOPZb CpccDe')
         parsed_restaurants = []
         for index, review in enumerate(rblock):
             if index >= offset:
-                parsed_restaurants.append(self.__parse_restaurant(review))
+                parsed_restaurants.append(self.__parse_cinema(review, postcode_category))
 
                 # logging to std out
-                print(self.__parse_restaurant(review))
+                print(self.__parse_cinema(review, postcode_category))
 
         return parsed_restaurants
 
@@ -245,14 +231,10 @@ class GoogleMapsScraper:
 
         return place_data
 
-    def __parse_reviews(self, review):
+    def __parse_reviews(self, review, location, cinema_name):
 
         item = {}
 
-        try:
-            location = review.find('span', class_='rsqaWe').text
-        except Exception as e:
-            location = None
         try:
             # TODO: Subject to changes
             id_review = review['data-review-id']
@@ -303,9 +285,11 @@ class GoogleMapsScraper:
         except Exception as e:
             user_url = None
 
+        item['location'] = location
+        item['cinema_name'] = cinema_name
+
         item['id_review'] = id_review
         item['caption'] = review_text
-
         # depends on language, which depends on geolocation defined by Google Maps
         # custom mapping to transform into date should be implemented
         item['relative_date'] = relative_date
@@ -321,24 +305,25 @@ class GoogleMapsScraper:
 
         return item
 
-    def __parse_restaurant(self, review):
+    def __parse_cinema(self, review, postcode):
 
         item = {}
 
         try:
-            restaurant_name = review['aria-label']
+            cinema_name = review['aria-label']
         except Exception as e:
-            restaurant_name = None
+            cinema_name = None
 
         try:
-            restaurant_url = review.find('a')['href']
+            cinema_url = review.find('a')['href']
         except Exception as e:
-            restaurant_url = None
+            cinema_url = None
 
         # store datetime of scraping and apply further processing to calculate
         # correct date as retrieval_date - time(relative_date)
-        item['restaurant_name'] = restaurant_name
-        item['restaurant_url'] = restaurant_url
+        item['cinema_name'] = cinema_name
+        item['cinema_url'] = cinema_url
+        item['postcode_category'] = postcode
 
         return item
 
@@ -377,7 +362,7 @@ class GoogleMapsScraper:
         self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', scrollable_div)
         #self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-    def __scroll_restaurant(self):
+    def __scroll_cinema(self):
         # TODO - add a scroller - https://stackoverflow.com/questions/20986631/how-can-i-scroll-a-web-page-using-selenium-webdriver-in-python
         scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
         #driver.execute_script("window.scrollTo(0, document.body.scrollHeight);", scrollable_div)

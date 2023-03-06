@@ -45,7 +45,7 @@ def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Document
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
-    parser.add_argument('--N', type=int, default=100, help='Number of reviews to scrape')
+    parser.add_argument('--N', type=int, default=30, help='Number of reviews to scrape')
     parser.add_argument('--i', type=str, default='input/urls.txt', help='target URLs file')
     parser.add_argument('--sort_by', type=str, default='newest', help='most_relevant, newest, highest_rating or lowest_rating')
     parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
@@ -69,9 +69,6 @@ if __name__ == '__main__':
                 if error == 0:
 
                     n = 0
-
-                    #if ind[args.sort_by] == 0:
-                    #    scraper.more_reviews()
 
                     while n < args.N:
 

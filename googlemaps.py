@@ -51,6 +51,15 @@ class GoogleMapsScraper:
         tries = 0
         while not clicked and tries < MAX_RETRY:
             try:
+                location = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[9]/div[3]/button/div[1]/div[2]/div[1]'
+                location = self.driver.find_element('xpath', location).text
+
+                more_reviews_xpath = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[49]/div/button/span/span[2]'
+                more_reviews = self.driver.find_element('xpath', more_reviews_xpath)
+                self.driver.execute_script("arguments[0].scrollIntoView(true);", more_reviews)
+
+                self.driver.execute_script("arguments[0].click();", more_reviews)
+
                 menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value=\'Sort\']')))
                 menu_bt.click()
 
@@ -76,7 +85,7 @@ class GoogleMapsScraper:
         return 0
 
     # Leaving as optional as we don't need to sort restaurants
-    def sort_restaurants(self, url, ind):
+    def bypass_cookies(self, url, ind):
 
         self.driver.get(url)
         status = self.__click_on_cookie_agreement()
@@ -109,8 +118,6 @@ class GoogleMapsScraper:
         #         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
         #         # restaurant list is displayed and enabled
         #
-        #
-        #         menu_bt.click()
         #
         #         clicked = True
         #         time.sleep(3)

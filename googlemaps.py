@@ -163,14 +163,14 @@ class GoogleMapsScraper:
         # wait for other reviews to load (ajax)
         time.sleep(4)
 
-        self.__scroll_cinema()
+        #self.__scroll_cinema()
 
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
 
         # doesn't do anything yet
-        restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        restaurant_list.send_keys(Keys.ARROW_DOWN)
+        # restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
+        # restaurant_list.send_keys(Keys.ARROW_DOWN)
 
         ## Function to scroll the side bar down to the end
         start = timeit.default_timer()

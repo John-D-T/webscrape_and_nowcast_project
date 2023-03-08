@@ -92,42 +92,6 @@ class GoogleMapsScraper:
         if status:
             print('cookie page bypassed')
 
-        #wait = WebDriverWait(self.driver, MAX_WAIT)
-
-        # open price menu
-        # clicked = False
-        # tries = 0
-        # while not clicked and tries < MAX_RETRY:
-        #     try:
-        #         # TODO - this code seems kind of useless
-        #         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        #         restaurant_list.send_keys(Keys.UP)
-        #
-        #         # agree = WebDriverWait(self.driver, 10).until(
-        #         #     EC.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Reject all")]')))
-        #         # TODO - figure out alternative
-        #         #menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@class=\"e2moi \"]')))
-        #         menu_bt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "//button[onclick='CookieInformation.submitAllCategories();')]")))
-        #
-        #         price_tag = self.driver.find_element("xpath", '//span[contains(text(), "Price")]')
-        #         # seems that it is_enabled() but not is_displayed()
-        #
-        #         rating_tag = self.driver.find_element("xpath", '//span[contains(text(), "Rating")]')
-        #
-        #         restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        #         # restaurant list is displayed and enabled
-        #
-        #
-        #         clicked = True
-        #         time.sleep(3)
-        #     except Exception as e:
-        #         tries += 1
-        #         self.logger.warn('Failed to click sorting button')
-        #
-        #     # failed to open the dropdown
-        #     if tries == MAX_RETRY:
-        #         return -1
-
         return 0
 
     def get_reviews(self, offset, location, cinema_name):
@@ -162,8 +126,6 @@ class GoogleMapsScraper:
 
         # wait for other reviews to load (ajax)
         time.sleep(4)
-
-        #self.__scroll_cinema()
 
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -348,9 +310,6 @@ class GoogleMapsScraper:
     # expand review description
     def __expand_reviews(self):
         # use XPath to load complete reviews
-        # TODO: Subject to changes
-        # TODO refactor 4 - Update selenium functionality
-        #links = self.driver.find_elements_by_xpath('//button[@jsaction="pane.review.expandReview"]')
         links = self.driver.find_elements("xpath", '//button[@jsaction="pane.review.expandReview"]')
 
         for l in links:
@@ -358,19 +317,8 @@ class GoogleMapsScraper:
         time.sleep(2)
 
     def __scroll(self):
-        # TODO: Subject to changes
-        # TODO refactor 5 - Update selenium functionality
-        #scrollable_div = self.driver.find_element_by_css_selector('div.m6QErb.DxyBCb.kA9KIf.dS8AEf')
         scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf')
         self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', scrollable_div)
-        #self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-    def __scroll_cinema(self):
-        # TODO - add a scroller - https://stackoverflow.com/questions/20986631/how-can-i-scroll-a-web-page-using-selenium-webdriver-in-python
-        scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        #driver.execute_script("window.scrollTo(0, document.body.scrollHeight);", scrollable_div)
-        self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', scrollable_div)
-        # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
     def __get_logger(self):
         # create logger

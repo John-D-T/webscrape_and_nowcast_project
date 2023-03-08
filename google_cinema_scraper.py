@@ -11,7 +11,6 @@ from googlemaps import GoogleMapsScraper
 #https://sites.google.com/site/tomihasa/google-language-codes
 
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
-# TODO - add a filter dictionary for 1. price tags, 2. cuisine, and maybe 3. cuisine?
 HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
 HEADER_W_SOURCE = ['cinema_name', 'category', 'cinema_url', 'postcode_category', 'url_source']
 
@@ -33,7 +32,8 @@ LIST_OF_LONDON_POSTCODE_AREAS = ['Central London', 'East London', 'North London'
                                       'Southeast London', 'Southwest London', 'West London']
 # LIST_OF_LONDON_POSTCODE_AREAS = ['Truro']
 
-def csv_writer(source_field, ind_sort_by, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):
+def csv_writer(source_field,
+               path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):
     outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # store reviews in CSV file
-    writer = csv_writer(args.source, args.sort_by)
+    writer = csv_writer(args.source)
 
     REFINED_POSTCODE_CATEGORIES = []
 

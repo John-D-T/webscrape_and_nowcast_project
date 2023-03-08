@@ -14,8 +14,7 @@ pytrends = TrendReq(hl='en-US', tz=360, geo='GB')
 
 # build payload
 
-kw_list = ["restaurants nearby"] # list of keywords to get data
-# "eating out", "mcdonalds"
+kw_list = ["cinemas nearby"] # list of keywords to get data
 
 pytrends.build_payload(kw_list, cat=0, timeframe='all')
 

@@ -49,34 +49,54 @@ class GoogleMapsScraper:
         # open dropdown menu
         clicked = False
         tries = 0
+        location = 'EMPTY'
         while not clicked and tries < MAX_RETRY:
             try:
-                #obtaining location
-                location = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[9]/div[3]/button/div[1]/div[2]/div[1]'
-                location = self.driver.find_element('xpath', location).text
+                # Obtaining location - the full xpath of the div is variable
 
-                more_reviews_xpath = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[49]/div/button/span/span[2]'
-                more_reviews = self.driver.find_element('xpath', more_reviews_xpath)
+                # try:
+                #     location = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[9]/div[3]/button/div[1]/div[2]/div[1]'
+                #     location = self.driver.find_element('xpath', location).text
+
+                # except Exception:
+                #     location = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[7]/div[2]/button/div[1]/div[2]/div[1]'
+                #     location = self.driver.find_element('xpath', location).text
+
+                location = 'div.Io6YTe.fontBodyMedium'
+                location = self.driver.find_element('css selector', location).text
+
+                # more_reviews_xpath = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[49]/div/button/span/span[2]'
+                # more_reviews = self.driver.find_element('xpath', more_reviews_xpath)
+
+                more_reviews_xpath = 'span.wNNZR.fontTitleSmall'
+                more_reviews = self.driver.find_element('css selector', more_reviews_xpath)
                 self.driver.execute_script("arguments[0].scrollIntoView(true);", more_reviews)
 
                 self.driver.execute_script("arguments[0].click();", more_reviews)
 
-                menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value=\'Sort\']')))
-                menu_bt.click()
+                # # TODO - figure out which element is the sort button (do I even need this?
+                # sort_menu = self.driver.find_element('css selector', 'span.DVeyrd')
+                # menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value=\'Sort\']')))
+                # menu_bt = wait.until(EC.element_to_be_clickable(('css selector', 'button.g88MCb.S9kvJb')))
+                # menu_bt.click()
 
                 clicked = True
                 time.sleep(3)
             except Exception as e:
+                location = 'ERROR'
                 tries += 1
-                self.logger.warn('Failed to click sorting button')
+                # self.logger.info('Failed to click sorting button')
+                self.logger.info('Failed to click into reviews')
 
             # failed to open the dropdown
             if tries == MAX_RETRY:
                 return -1
 
         #  element of the list specified according to ind
-        recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'menuitemradio\']')[ind]
-        recent_rating_bt.click()
+        # TODO - do we even need this section to sort? test shows we're in the right page, and we're getting all reviews anyways
+        # test = self.driver.find_element('xpath', '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]')
+        # recent_rating_bt = self.driver.find_elements("xpath", '//div[@role=\'menuitemradio\']')[ind]
+        # recent_rating_bt.click()
 
         # wait to load review (ajax call)
         time.sleep(5)

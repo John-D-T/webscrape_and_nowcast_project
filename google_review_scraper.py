@@ -46,7 +46,7 @@ def csv_writer(source_field,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
-    parser.add_argument('--N', type=int, default=30, help='Number of reviews to scrape')
+    parser.add_argument('--N', type=int, default=10, help='Number of reviews to scrape')
     parser.add_argument('--i', type=str, default='input/urls.txt', help='target URLs file')
     parser.add_argument('--sort_by', type=str, default='newest', help='most_relevant, newest, highest_rating or lowest_rating')
     parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                 cinema_name = str(url).split('/')[5].replace('+', '_').replace(',', '_')
                 if args.place:
                     print(scraper.get_account(url))
-                else:
+                else: # TODO - refactor function to not say 'sort by'
                     error, location = scraper.sort_by(url, ind[args.sort_by])
 
                 if error == 0:

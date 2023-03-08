@@ -168,10 +168,6 @@ class GoogleMapsScraper:
         # parse reviews
         response = BeautifulSoup(self.driver.page_source, 'html.parser')
 
-        # doesn't do anything yet
-        # restaurant_list = self.driver.find_element('css selector', 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd')
-        # restaurant_list.send_keys(Keys.ARROW_DOWN)
-
         ## Function to scroll the side bar down to the end
         start = timeit.default_timer()
 
@@ -315,6 +311,12 @@ class GoogleMapsScraper:
             cinema_name = None
 
         try:
+            category = review.contents[1].contents[3].contents[0].contents[0].contents[1].contents[3].contents[7]\
+            .contents[3].contents[1].contents[1].contents[3].contents[0]
+        except Exception as e:
+            category = None
+
+        try:
             cinema_url = review.find('a')['href']
         except Exception as e:
             cinema_url = None
@@ -322,6 +324,7 @@ class GoogleMapsScraper:
         # store datetime of scraping and apply further processing to calculate
         # correct date as retrieval_date - time(relative_date)
         item['cinema_name'] = cinema_name
+        item['category'] = category
         item['cinema_url'] = cinema_url
         item['postcode_category'] = postcode
 

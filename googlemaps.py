@@ -328,6 +328,7 @@ class GoogleMapsScraper:
         return place
 
     # expand review description
+    # TODO - work on this
     def __expand_reviews(self):
         # use XPath to load complete reviews
         links = self.driver.find_elements("xpath", '//button[@jsaction="pane.review.expandReview"]')
@@ -337,7 +338,9 @@ class GoogleMapsScraper:
         time.sleep(2)
 
     def __scroll(self):
-        scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf')
+        # TODO - figure out why div can't be found
+        # scrollable_div = self.driver.find_element("css selector", 'div.m6QErb.DxyBCb.kA9KIf.dS8AEf')
+        scrollable_div = self.driver.find_element("css selector", 'div.e07Vkf.kA9KIf')
         self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', scrollable_div)
 
     def __get_logger(self):

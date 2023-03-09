@@ -25,12 +25,12 @@ LIST_OF_NON_LONDON_POSTCODE_AREAS = ['St Albans', 'Brighton', 'Bromley', 'Cambri
                      'Llandrindod Wells', 'Stoke-on-Trent', 'Shrewsbury', 'Telford', 'Worcester', 'Walsall',
                      'Wolverhampton', 'Derby', 'Leicester', 'Lincoln', 'Nottingham', 'Northampton', 'Bradford',
                      'Doncaster', 'Huddersfield', 'Harrogate', 'Hull', 'Leeds', 'Sheffield', 'Wakefield', 'York',
-                                     'Durham', 'Darlington', 'Newcastle upon Tyne', 'Sunderland', 'Cleveland']
-# LIST_OF_NON_LONDON_POSTCODE_AREAS = []
+                     'Durham', 'Darlington', 'Newcastle upon Tyne', 'Sunderland', 'Cleveland']
+# LIST_OF_NON_LONDON_POSTCODE_AREAS = ['Cleveland+UK']
 
 LIST_OF_LONDON_POSTCODE_AREAS = ['Central London', 'East London', 'North London', 'Northeast London', 'Northwest London',
                                       'Southeast London', 'Southwest London', 'West London']
-# LIST_OF_LONDON_POSTCODE_AREAS = ['Truro']
+# LIST_OF_LONDON_POSTCODE_AREAS = []
 
 def csv_writer(source_field,
                path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):

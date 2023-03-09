@@ -5,6 +5,8 @@ import argparse
 import csv
 from termcolor import colored
 import time
+import pandas as pd
+import os
 
 #https://sites.google.com/site/tomihasa/google-language-codes
 
@@ -30,7 +32,7 @@ HEADER_W_SOURCE = ['location', 'cinema_name', 'id_review', 'caption', 'relative_
 
 
 def csv_writer(source_field,
-               path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output'):
+               path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output/'):
     outfile= str(datetime.now().date()) + '_gm_reviews.csv'
     targetfile = open(path + outfile, mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
@@ -46,7 +48,7 @@ def csv_writer(source_field,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
-    parser.add_argument('--N', type=int, default=10, help='Number of reviews to scrape')
+    parser.add_argument('--N', type=int, default=5000, help='Number of reviews to scrape')
     parser.add_argument('--i', type=str, default='input/urls.txt', help='target URLs file')
     parser.add_argument('--sort_by', type=str, default='newest', help='most_relevant, newest, highest_rating or lowest_rating')
     parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
@@ -59,14 +61,21 @@ if __name__ == '__main__':
     # store reviews in CSV file
     writer = csv_writer(args.source)
 
-    with GoogleMapsScraper(debug=args.debug) as scraper:
-        with open(args.i, 'r') as urls_file:
-            for url in urls_file:
+    list_of_cinemas_csv = 'output\\2023-03-08_list_of_cinemas_refined_v2.csv'
+    london_cinemas_df = (os.path.join(os.getcwd(), list_of_cinemas_csv))
 
+    with GoogleMapsScraper(debug=args.debug) as scraper:
+        # with open(args.i, 'r') as urls_file:
+        #     for url in urls_file:
+            url_df = pd.read_csv(london_cinemas_df)
+            for row in url_df.iterrows():
+                url = row[1][2]
+                print('scraping from %s' % url)
                 cinema_name = str(url).split('/')[5].replace('+', '_').replace(',', '_')
                 if args.place:
                     print(scraper.get_account(url))
-                else: # TODO - refactor function to not say 'sort by'
+                else:
+                    # TODO - refactor function to not say 'sort by'
                     error, location = scraper.sort_by(url, ind[args.sort_by])
 
                 if error == 0:

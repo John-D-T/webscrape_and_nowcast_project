@@ -2,9 +2,10 @@
 import pandas as pd
 from functools import wraps
 import time
+import os
+
 
 def timeit(func):
-    @wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
@@ -15,15 +16,21 @@ def timeit(func):
     return timeit_wrapper
 
 
-@wraps
+@timeit
 def worker():
-    list_of_cinemas = '2023-03-07_list_of_cinemas'
-    # london_cinemas_csv = pd.read_csv(list_of_cinemas)
+    list_of_cinemas_csv = 'output\\2023-03-08_list_of_cinemas.csv'
+    list_of_cinemas_refined_csv = 'output\\2023-03-08_list_of_cinemas_refined.csv'
+    london_cinemas_df = pd.read_csv(os.path.join(os.getcwd(), list_of_cinemas_csv))
+    london_cinemas_refined_df = london_cinemas_df.drop_duplicates(subset=['cinema_name', 'cinema_url'])
+    london_cinemas_refined_df = london_cinemas_refined_df[(london_cinemas_refined_df.category == 'Cinema') |
+                                                           (london_cinemas_refined_df.category == 'Outdoor cinema') |
+                                                           (london_cinemas_refined_df.category == 'Imax Cinema') |
+                                                           (london_cinemas_refined_df.category == 'Film production cinema') |
+                                                           (london_cinemas_refined_df.category == 'Arts Organisation') |
+                                                           (london_cinemas_refined_df.category == 'Events Venue')]
 
-    # TODO - add de-duplication
-
-    # TODO - group all of London into one? Or categorize by postcode
-
+    # write to csv file
+    london_cinemas_refined_df.to_csv(os.path.join(os.getcwd(), list_of_cinemas_refined_csv))
 
 if __name__ == "__main__":
     worker()

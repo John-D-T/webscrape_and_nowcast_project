@@ -9,13 +9,15 @@ pip install xlrd
 pip install Jinja
 """
 
+# pd.set_option('display.max_columns', None)
+
 def creating_clean_df_using_excel():
     bfi_subfolder = 'bfi_data'
     folder_location = os.path.join(os.getcwd(), bfi_subfolder)
     new_folder_location = os.path.join(os.getcwd(), bfi_subfolder.replace('data', 'data_refined'))
 
     month_dict = {'jan-': 'january-', 'feb-': 'february-', 'mar-': 'march-', 'apr-': 'april-', 'may-': 'may-', 'jun-': 'june-', 'jul-': 'july-',
-    'aug-': 'august-', 'sep-': 'september-', 'oct-': 'october', 'nov-': 'november', 'dec-': 'december'}
+    'aug-': 'august-', 'sep-': 'september-', 'oct-': 'october-', 'nov-': 'november-', 'Nov-': 'november-','dec-': 'december-'}
 
     for file_name in os.listdir(folder_location):
         try:
@@ -28,8 +30,18 @@ def creating_clean_df_using_excel():
                     # loading important information into a df
                     file_path = os.path.join(folder_location, file_name)
                     box_office_df = pd.read_excel(file_path, skiprows=[0])
-                    box_office_df = box_office_df[
-                        ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                    try:
+                        box_office_df = box_office_df[
+                            ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                    except:
+                        try:
+                            box_office_df = pd.read_excel(file_path, skiprows=[0,1])
+                            box_office_df = box_office_df[
+                                ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                        except:
+                            box_office_df = pd.read_excel(file_path, skiprows=[0,1,2])
+                            box_office_df = box_office_df[
+                                ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
 
                     # creating a df for the broken down box office
                     subset_box_office_df = box_office_df.iloc[0:15, :]
@@ -122,7 +134,7 @@ def creating_clean_df_using_excel():
                         # e.g. bfi-weekend-box-office-report-2017-03-31-04-02
                         elif len(file_name.split('-')[5:]) == 5:
                             date_list = file_name.split('-')[5:]
-                            del date_list[1:2]
+                            del date_list[1:3]
                             modified_date = "-".join(date_list).split('.')[0]
 
                             # convert to datetime object
@@ -133,7 +145,7 @@ def creating_clean_df_using_excel():
 
                             new_file_name = new_file_name.replace(original_date, new_date)
                     # e.g. bfi-weekend-box-office-report-31-october-2-November-2014
-                    elif len(file_name.split('-')[6:]) > 4:
+                    elif len(file_name.split('-')[5:]) > 4:
                         modified_date = "-".join(file_name.split('-')[7:]).split('.')[0]
 
                         # convert to datetime object
@@ -166,8 +178,18 @@ def creating_clean_df_using_excel():
                     # loading important information into a df
                     file_path = os.path.join(folder_location, file_name)
                     box_office_df = pd.read_excel(file_path, skiprows=[0])
-                    box_office_df = box_office_df[
-                        ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                    try:
+                        box_office_df = box_office_df[
+                            ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                    except:
+                        try:
+                            box_office_df = pd.read_excel(file_path, skiprows=[0, 1])
+                            box_office_df = box_office_df[
+                                ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
+                        except:
+                            box_office_df = pd.read_excel(file_path)
+                            box_office_df = box_office_df[
+                                ['Title', 'Weekend Gross', 'Number of cinemas', 'Site average', 'Distributor']]
 
                     # creating a df for the broken down box office
                     subset_box_office_df = box_office_df.iloc[0:15, :]
@@ -223,6 +245,33 @@ def creating_clean_df_using_excel():
             continue
 
 
+def compile_cleaned_csv():
+    bfi_subfolder = 'bfi_data_refined'
+    folder_location = os.path.join(os.getcwd(), bfi_subfolder)
+
+    total_box_office_df_compiled = pd.DataFrame()
+    subset_box_office_df_compiled = pd.DataFrame()
+
+    for file_name in os.listdir(folder_location):
+        print('processing: ' + file_name)
+        if file_name.startswith('t_'):
+            mini_t_df = pd.read_csv(os.path.join(folder_location, file_name))
+            mini_t_df['date'] = "".join(file_name.split('-')[1:])
+            # loop to append dataframes
+            total_box_office_df_compiled = pd.concat([total_box_office_df_compiled, mini_t_df])
+        elif file_name.startswith('bfi'):
+            subset_df = pd.read_csv(os.path.join(folder_location, file_name))
+            subset_df['date'] = "-".join(file_name.split('-')[1:]).split('.')[0]
+            subset_df = subset_df.rename(columns={'Film': 'Title'})
+            # loop to append dataframes
+            subset_box_office_df_compiled = pd.concat([subset_box_office_df_compiled, subset_df])
+
+    total_box_office_df_compiled.to_csv(os.path.join(folder_location, 'compiled_total_box_office.csv'))
+    subset_box_office_df_compiled.to_csv(os.path.join(folder_location, 'compiled_top_15_box_office.csv'))
+
+
 if __name__ == '__main__':
 
-    creating_clean_df_using_excel()
+    # creating_clean_df_using_excel()
+
+    compile_cleaned_csv()

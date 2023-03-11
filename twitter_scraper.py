@@ -2,8 +2,7 @@
 https://www.natasshaselvaraj.com/how-to-scrape-twitter/
 https://github.com/twintproject/twint
 
-TODO:
-check out https://betterprogramming.pub/how-to-scrape-tweets-with-snscrape-90124ed006af
+On 3.7 venv
 
 pip install pandas
 pip install Twint

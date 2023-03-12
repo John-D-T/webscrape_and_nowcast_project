@@ -19,8 +19,9 @@ import twint
 import pandas as pd
 import datetime
 import time
+import os
 
-def twitter_scrape(keyword, year):
+def twitter_scrape(keyword, year, list_of_processed_files):
     for month in range(1, 13):
         for day in range(1, 32):
             if month == 2 and day > 28:
@@ -35,6 +36,7 @@ def twitter_scrape(keyword, year):
 
                 #file_name = keyword + '_%s_%s_%s.csv' % (year, month, day)
                 file_name = keyword + '_%s.csv' % formatted_start_date
+
                 c = twint.Config()
                 c.Search = [keyword]  # topic
                 # c.Limit = 4000      # limit to the number of Tweets to scrape
@@ -53,25 +55,31 @@ def twitter_scrape(keyword, year):
                 # runs query to web scrape from twitter
                 try:
                     print('attempting to scrape for %s' % file_name)
-                    twint.run.Search(c)
+                    if formatted_start_date in list_of_processed_files:
+                        print('already processed %s' % file_name)
+                    else:
+                        twint.run.Search(c)
+
                 except Exception as e:
                     string_issue = 'issue in %s due to %s' % (file_name, e)
                     print(string_issue)
                     with open('errors.txt', 'a+') as file:
                         file.write(string_issue + '\n')
 
+def obtain_list_of_unprocessed_files(keyword):
+    list_of_processed_files = []
+    input_folder_name = 'twitter_output'
+    input_folder = os.path.join(os.getcwd(), input_folder_name)
+    for item in os.listdir(input_folder):
+        item_refined = item.split('.')[0].split('_')[-1]
+        list_of_processed_files.append(item_refined)
 
-# limit search to tweets in the UK?
-
-def analyze_scrape(output_file):
-    # Now load the extracted csv into a df
-    df = pd.read_csv(output_file)
-
+    return list_of_processed_files
 
 if __name__ == '__main__':
-    # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
     keyword = "odeon"
-    years = [year for year in range(2010, 2011)]
+    list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
+    # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
+    years = [year for year in range(2010, 2013)]
     for year in years:
-        twitter_scrape(keyword=keyword, year=year)
-    #analyze_scrape(output_file="output/%s_tweets_%s.csv" % (keyword, year))
+        twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files)

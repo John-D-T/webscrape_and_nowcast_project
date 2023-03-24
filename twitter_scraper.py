@@ -55,7 +55,8 @@ def twitter_scrape(keyword, year, list_of_processed_files):
                 # runs query to web scrape from twitter
                 try:
                     print('attempting to scrape for %s' % file_name)
-                    if formatted_start_date in list_of_processed_files:
+                    # if formatted_start_date in list_of_processed_files:
+                    if file_name in list_of_processed_files:
                         print('already processed %s' % file_name)
                     else:
                         twint.run.Search(c)
@@ -66,20 +67,23 @@ def twitter_scrape(keyword, year, list_of_processed_files):
                     with open('errors.txt', 'a+') as file:
                         file.write(string_issue + '\n')
 
+        time.sleep(600)
+
 def obtain_list_of_unprocessed_files(keyword):
     list_of_processed_files = []
     input_folder_name = 'twitter_output'
     input_folder = os.path.join(os.getcwd(), input_folder_name)
     for item in os.listdir(input_folder):
-        item_refined = item.split('.')[0].split('_')[-1]
-        list_of_processed_files.append(item_refined)
+        # item_refined = item.split('.')[0].split('_')[-1]
+        list_of_processed_files.append(item)
 
     return list_of_processed_files
 
 if __name__ == '__main__':
-    keyword = "odeon"
+    keyword = "cinema"
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
     # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
-    years = [year for year in range(2010, 2013)]
+    years = [year for year in range(2020, 2021)]
     for year in years:
         twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files)
+        time.sleep(3600)

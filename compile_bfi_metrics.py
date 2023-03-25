@@ -256,7 +256,7 @@ def compile_cleaned_csv():
         print('processing: ' + file_name)
         if file_name.startswith('t_'):
             mini_t_df = pd.read_csv(os.path.join(folder_location, file_name))
-            mini_t_df['date'] = "".join(file_name.split('-')[1:])
+            mini_t_df['date'] = ("".join(file_name.split('-')[1:]).split('.')[0])
             # loop to append dataframes
             total_box_office_df_compiled = pd.concat([total_box_office_df_compiled, mini_t_df])
         elif file_name.startswith('bfi'):

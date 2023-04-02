@@ -13,7 +13,7 @@ pip install Twint
     # Solution 2: pip install git+git://github.com/ajctrl/twint@patch-1
 
 # ISSUE - twint.token.RefreshTokenException: Could not find the Guest token in HTML
-    # SOL: changed the regex - then guest token was found
+    # SOL: changed the regex in twint package - then guest token was found
 
 import twint
 import pandas as pd

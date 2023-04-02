@@ -4,17 +4,20 @@ import pandas as pd
 import numpy as np
 import os
 import sktime
+from sktime.datasets import load_airline
 
 '''
-pip install cython
+pip install cython - purpose?
+Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
 
-# then following these steps: https://www.sktime.net/en/latest/installation.html#development-versions
+
+# Follow these steps: https://www.sktime.net/en/latest/installation.html#development-versions
 git clone https://github.com/sktime/sktime.git
 cd sktime
 git checkout main
 git pull
 
-pip install sktime --seems to work now
+TODO - continue the work above. Might not need sktime folder if I can fix the bigger issue.
 
 read: https://analyticsindiamag.com/sktime-library/
 https://towardsdatascience.com/sktime-a-unified-python-library-for-time-series-machine-learning-3c103c139a55
@@ -26,8 +29,6 @@ def analyze_bfi_net_box_office():
 
     # creating our time series df
     ### creating box office df
-    # todo - look to switch to the 15 movie one? Can just run a group by sum to get the box office. can ALSO get number
-    # todo - of cinemas, site average, and maybe more
     box_office_df = pd.read_csv(os.path.join(os.getcwd(), 'output', box_office_file))
 
     # todo - only take the weekly gross and date columns from box office df

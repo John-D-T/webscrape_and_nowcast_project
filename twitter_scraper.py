@@ -22,7 +22,7 @@ import time
 import os
 
 def twitter_scrape(keyword, year, list_of_processed_files):
-    for month in range(1, 13):
+    for month in range(9, 13):
         for day in range(1, 32):
             if month == 2 and day > 28:
                 break
@@ -80,7 +80,7 @@ def obtain_list_of_unprocessed_files(keyword):
     return list_of_processed_files
 
 if __name__ == '__main__':
-    keyword = "cinemas"
+    keyword = "odeon"
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
     # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
     years = [year for year in range(2012, 2013)]

@@ -5,7 +5,14 @@ import numpy as np
 import os
 import sktime
 from sktime.datasets import load_airline
+'''
+import wheel.pep425tags as w
+print(w.get_supported(archive_root=''))
+cp38-none-any is compatible - change wheel as such
 
+then install wheel of scikit-learn (downloaded wheel beforehand)
+then pip install ski-time
+'''
 '''
 pip install cython - purpose?
 Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)

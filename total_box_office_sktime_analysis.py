@@ -6,26 +6,16 @@ import os
 import sktime
 from sktime.datasets import load_airline
 '''
+Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
+
 import wheel.pep425tags as w
 print(w.get_supported(archive_root=''))
 cp38-none-any is compatible - change wheel as such
 
 then install wheel of scikit-learn (downloaded wheel beforehand)
 then pip install ski-time
-'''
-'''
-pip install cython - purpose?
-Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
 
-
-# Follow these steps: https://www.sktime.net/en/latest/installation.html#development-versions
-git clone https://github.com/sktime/sktime.git
-cd sktime
-git checkout main
-git pull
-
-TODO - continue the work above. Might not need sktime folder if I can fix the bigger issue.
-
+Usage:
 read: https://analyticsindiamag.com/sktime-library/
 https://towardsdatascience.com/sktime-a-unified-python-library-for-time-series-machine-learning-3c103c139a55
 '''

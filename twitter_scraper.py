@@ -80,10 +80,10 @@ def obtain_list_of_unprocessed_files(keyword):
     return list_of_processed_files
 
 if __name__ == '__main__':
-    keyword = "cinema"
+    keyword = "cinemas"
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
     # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
-    years = [year for year in range(2020, 2021)]
+    years = [year for year in range(2012, 2013)]
     for year in years:
         twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files)
         time.sleep(3600)

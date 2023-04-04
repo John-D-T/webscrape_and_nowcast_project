@@ -3,17 +3,17 @@
 import pandas as pd
 import numpy as np
 import os
-import sktime
-from sktime.datasets import load_airline
+# import sktime
+# from sktime.datasets import load_airline
 '''
 Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
 
 import wheel.pep425tags as w
 print(w.get_supported(archive_root=''))
-cp38-none-any is compatible - change wheel as such
+cp38-none-any is compatible - find correct wheel. Can't just rename file
 
-then install wheel of scikit-learn (downloaded wheel beforehand)
-then pip install ski-time
+then install that wheel of scikit-learn (downloaded wheel beforehand)
+then pip install sktime
 
 Usage:
 read: https://analyticsindiamag.com/sktime-library/
@@ -36,8 +36,9 @@ def analyze_bfi_net_box_office():
     box_office_refine_df = box_office_df[[weekend_gross_column, distributor, box_office_date_column, no_of_cinemas]]
 
     box_office_refine_df['total_weekend_gross'] = box_office_refine_df.groupby('date')['Weekend Gross'].transform(np.sum)
+    box_office_refine_df['date'] = pd.to_datetime(box_office_refine_df['date'], format='%d-%m-%Y')
 
-
+    # TODO - aggregate data by month (to match frequency of GVA/GDP data
 
     ### creating our gdp df
 
@@ -49,6 +50,13 @@ def analyze_bfi_net_box_office():
     gross_value_column = 'Gross Value Added - Monthly (Index 1dp) :CVM SA'
     gdp_refine_df = gdp_df[[gdp_date_column, gross_value_column]]
 
+    # clean date column format to match DD-MM-YY format, similar to the box office df
+    gdp_refine_df = gdp_refine_df.rename(columns={gdp_date_column: "date", gross_value_column: "GVA"})
+
+    gdp_refine_df['date'] = pd.to_datetime(gdp_refine_df['date'], format='%Y %b')
+
+    # merge the two df - to then pass into sktime
+    merged_df = pd.concat(objs=[box_office_refine_df, gdp_refine_df], keys='date')
 
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:

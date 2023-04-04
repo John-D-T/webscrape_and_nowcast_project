@@ -3,17 +3,22 @@
 import pandas as pd
 import numpy as np
 import os
-# import sktime
-# from sktime.datasets import load_airline
+import sktime
+from sktime.datasets import load_airline
 '''
 Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
 
 import wheel.pep425tags as w
 print(w.get_supported(archive_root=''))
-cp38-none-any is compatible - find correct wheel. Can't just rename file
+cp38-none-any is compatible - find correct wheel (looks promising here - https://www.lfd.uci.edu/~gohlke/pythonlibs/#scikit-learn)
 
-then install that wheel of scikit-learn (downloaded wheel beforehand)
+then install that wheel of scikit-learn and scipy (downloaded wheel beforehand)
 then pip install sktime
+
+
+ImportError: DLL load failed while importing _qhull: The specified module could not be found.
+https://stackoverflow.com/questions/63613167/pycharm-error-dll-load-failed-while-importing-qhull-the-specified-module-could
+
 
 Usage:
 read: https://analyticsindiamag.com/sktime-library/

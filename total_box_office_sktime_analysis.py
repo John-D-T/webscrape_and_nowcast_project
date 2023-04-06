@@ -19,6 +19,7 @@ then pip install sktime
 ImportError: DLL load failed while importing _qhull: The specified module could not be found.
 https://stackoverflow.com/questions/63613167/pycharm-error-dll-load-failed-while-importing-qhull-the-specified-module-could
 
+Trying in 3.7 venv - different versions = more compatible? No issues when installing scipy and scikit learn it seems 
 
 Usage:
 read: https://analyticsindiamag.com/sktime-library/

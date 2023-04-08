@@ -9,7 +9,7 @@ from sktime.forecasting.model_selection import temporal_train_test_split
 from sktime.forecasting.base import ForecastingHorizon
 
 '''
-
+ONLY WORKS ON 3.7 VENV 
 soft dependency on seaborn - pip install seaborn 
 
 Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)

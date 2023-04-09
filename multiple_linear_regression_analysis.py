@@ -3,35 +3,15 @@
 import pandas as pd
 import numpy as np
 import os
-import sktime
-
-from sktime.forecasting.model_selection import temporal_train_test_split
-from sktime.forecasting.base import ForecastingHorizon
+import sklearn
+import scipy
+import seaborn
 
 '''
-ONLY WORKS ON 3.7 VENV 
-soft dependency on seaborn - pip install seaborn 
+3.8 SHAKY, BUT WORKS ON 3.7 VENV - different versions = more compatible? No issues when installing scipy and scikit learn
 
-Issues are to do with installing skikit-learn (1.3.0) and scipy (1.3.2)
-
-import wheel.pep425tags as w
-print(w.get_supported(archive_root=''))
-cp38-none-any is compatible - find correct wheel (looks promising here - https://www.lfd.uci.edu/~gohlke/pythonlibs/#scikit-learn)
-
-then install that wheel of scikit-learn and scipy (downloaded wheel beforehand)
-then pip install sktime
-
-
-ImportError: DLL load failed while importing _qhull: The specified module could not be found.
-https://stackoverflow.com/questions/63613167/pycharm-error-dll-load-failed-while-importing-qhull-the-specified-module-could
-
-Trying in 3.7 venv - different versions = more compatible? No issues when installing scipy and scikit learn it seems 
-
-Usage:
-read: https://analyticsindiamag.com/sktime-library/
-https://towardsdatascience.com/sktime-a-unified-python-library-for-time-series-machine-learning-3c103c139a55
-https://medium.com/@sarka.pribylova/python-sktime-a76ee1423072
-https://towardsdatascience.com/build-complex-time-series-regression-pipelines-with-sktime-910bc25c96b6
+Linear regression notes:
+https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e
 '''
 
 def create_time_series_df(gdp_df, box_office_df, monthly_admission_df):
@@ -40,24 +20,7 @@ def create_time_series_df(gdp_df, box_office_df, monthly_admission_df):
     merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
     merged_df = pd.merge(merged_df, monthly_admission_df, on=['date_grouped'])
 
-    # create test-train split
-    test_number = int(0.25 * merged_df.shape[0])
-    y_train, y_test = temporal_train_test_split(merged_df['weekend_gross'], test_size=test_number)
 
-    fh = ForecastingHorizon(y_test.index, is_relative=False)
-
-    from sklearn.linear_model import LinearRegression
-    regressor = LinearRegression()
-
-    from sktime.forecasting.compose import make_reduction
-    forecaster = make_reduction(regressor, window_length=52, strategy="recursive")
-
-    forecaster.fit(y_train)
-    y_pred = forecaster.predict(fh)
-
-    from sktime.utils.plotting import plot_series
-    plot_series(y_train['2017-07-01':], y_test, y_pred, labels=["y_train", "y_test", "y_pred"], x_label='Date',
-                y_label='Box office')
 
 
 def create_gdp_df():
@@ -127,10 +90,15 @@ def create_monthly_admission_df():
 
     return monthly_admission_df
 
+def create_google_trends_df():
+    return ''
+
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.max_columns', None)
+
+    google_trends_df = create_google_trends_df()
 
     gdp_df = create_gdp_df()
 

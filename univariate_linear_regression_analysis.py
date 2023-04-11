@@ -5,8 +5,12 @@ import numpy as np
 import os
 import sklearn
 import scipy
-import seaborn
+import seaborn as sns
 from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import statsmodels
+from statsmodels.tools.tools import add_constant
+from statsmodels.regression.linear_model import OLS
 
 '''
 3.8 SHAKY, BUT WORKS ON 3.7 VENV - different versions = more compatible? No issues when installing scipy and scikit learn
@@ -14,20 +18,70 @@ from sklearn.linear_model import LinearRegression
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e
 https://medium.com/analytics-vidhya/the-pitfalls-of-linear-regression-and-how-to-avoid-them-b93626e1a020
+https://towardsdatascience.com/regression-plots-in-python-with-seaborn-118472b12e3d
+https://codeburst.io/multiple-linear-regression-sklearn-and-statsmodels-798750747755
+
 
 '''
 
-def create_regression(gdp_df, box_office_df, monthly_admission_df):
+def univariate_regression_box_office_gva(gdp_df, box_office_df):
+
+    # clearing out existing graphs
+    plt.clf()
+
+    # creating our dataframe to pass into regression
+    merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
+
+    sns.regplot(x="weekend_gross", y="GVA", data=merged_df).set(title='Univariate regression of Weekend Gross vs GVA')
+
+    plt.clf()
+    sns.regplot(x="weekend_gross", y="GVA", data=merged_df, order=2)
+
+def univariate_regression_monthly_admission_gva(gdp_df, monthly_admission_df):
+
+    # clearing out existing graphs
+    plt.clf()
 
     # creating our time series df to pass into regression
+    merged_df = pd.merge(monthly_admission_df, gdp_df, on=['date_grouped'])
+
+    sns.regplot(x="monthly admissions", y="GVA", data=merged_df).set(title='Univariate regression of Monthly Admissions vs GVA')
+
+    plt.clf()
+    sns.regplot(x="monthly admissions", y="GVA", data=merged_df, order=2)
+
+def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df):
+    # clearing out existing graphs
+    plt.clf()
+
     merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
     merged_df = pd.merge(merged_df, monthly_admission_df, on=['date_grouped'])
 
-    X = merged_df.iloc[:, 0].values.reshape(-1, 1)  # values converts it into a numpy array
-    Y = merged_df.iloc[:, 1].values.reshape(-1, 1)  # -1 means that calculate the dimension of rows, but have 1 column
-    linear_regressor = LinearRegression()  # create object for the class
-    linear_regressor.fit(X, Y)  # perform linear regression
-    Y_pred = linear_regressor.predict(X)  # make predictions
+    # convert date to numerical value
+    import datetime as ddt
+    merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+
+    X = merged_df[['date_grouped','weekend_gross','monthly admissions']]
+    Y = merged_df['GVA']
+
+    # initiating linear regression
+    reg = LinearRegression()
+    reg.fit(X, Y)
+
+    Intercept = reg.intercept_
+    Coefficients = reg.coef_
+
+    print(Intercept)  # -2931.893
+    print(Coefficients)  # [4.10063018e-03 1.34416632e-08 4.43920342e-07]
+
+    # statsmodel functionality, with more detail:
+    X = add_constant(X)  # to add constant value in the model
+    model = OLS(Y, X).fit()  # fitting the model
+    predictions = model.summary()
+
+    # summary of the OLS regression
+    predictions
 
 
 def create_gdp_df():
@@ -93,7 +147,7 @@ def create_monthly_admission_df():
     monthly_admissions_file = 'monthly_admissions_uk.csv'
 
     # creating monthly admissions df
-    monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'input', monthly_admissions_file))
+    monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'input', monthly_admissions_file), thousands=',')
 
     return monthly_admission_df
 
@@ -113,4 +167,8 @@ if __name__ == '__main__':
 
     monthly_admission_df = create_monthly_admission_df()
 
-    create_regression(gdp_df, box_office_df, monthly_admission_df)
+    univariate_regression_box_office_gva(gdp_df, box_office_df)
+
+    univariate_regression_monthly_admission_gva(gdp_df, monthly_admission_df)
+
+    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df)

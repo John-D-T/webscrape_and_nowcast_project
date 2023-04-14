@@ -116,10 +116,12 @@ def create_box_office_weightings_df():
     no_of_cinemas = 'Number of cinemas'
     distributor = 'Distributor'
     title = 'Title'
+    site_average = 'Site average'
 
-    box_office_refine_df = box_office_df[[title, weekend_gross_column, box_office_date_column]]
+    box_office_refine_df = box_office_df.drop(columns=[title, distributor, no_of_cinemas, site_average], axis='columns')
+    #box_office_refine_df = box_office_df[[weekend_gross_column, box_office_date_column]]
 
-    box_office_refine_df = box_office_refine_df.rename(columns={'Title': 'title', 'Weekend Gross': 'weekend_gross'})
+    box_office_refine_df = box_office_refine_df.rename(columns={'Weekend Gross': 'weekend_gross'})
 
     box_office_refine_df['date'] = pd.to_datetime(box_office_refine_df['date'], format='%d-%m-%Y')
 
@@ -129,7 +131,13 @@ def create_box_office_weightings_df():
 
     box_office_refine_df['weekend_gross_ratio'] = box_office_refine_df['weekend_gross'] / box_office_refine_df['total_weekend_gross']
 
+    # aggregate data by month (to match frequency of GDP data)
+    box_office_refine_df['date_grouped'] = pd.to_datetime(box_office_refine_df['date']).apply(lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
 
+    box_office_refine_df = box_office_refine_df.drop(columns=['date', 'total_weekend_gross', 'weekend_gross', 'Unnamed: 0', 'Unnamed: 0.1'])
+    box_office_refine_df_by_month = box_office_refine_df.groupby(by=['rank', 'date_grouped'])['weekend_gross_ratio'].mean().reset_index()
+
+    return box_office_refine_df_by_month
 
 def create_box_office_df():
     box_office_file = 'compiled_top_15_box_office.csv'
@@ -190,6 +198,8 @@ if __name__ == '__main__':
     google_trends_df = create_google_trends_df()
 
     gdp_df = create_gdp_df()
+
+    create_box_office_weightings_df()
 
     box_office_df = create_box_office_df()
 

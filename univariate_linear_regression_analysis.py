@@ -105,6 +105,32 @@ def create_gdp_df():
 
     return gdp_refine_df.drop(columns=['date'])
 
+def create_box_office_weightings_df():
+    box_office_file = 'compiled_top_15_box_office.csv'
+
+    ### creating box office df
+    box_office_df = pd.read_csv(os.path.join(os.getcwd(), 'output', box_office_file))
+
+    weekend_gross_column = 'Weekend Gross'
+    box_office_date_column = 'date'
+    no_of_cinemas = 'Number of cinemas'
+    distributor = 'Distributor'
+    title = 'Title'
+
+    box_office_refine_df = box_office_df[[title, weekend_gross_column, box_office_date_column]]
+
+    box_office_refine_df = box_office_refine_df.rename(columns={'Title': 'title', 'Weekend Gross': 'weekend_gross'})
+
+    box_office_refine_df['date'] = pd.to_datetime(box_office_refine_df['date'], format='%d-%m-%Y')
+
+    box_office_refine_df['rank'] = box_office_refine_df.groupby('date')['weekend_gross'].rank(ascending=False)
+
+    box_office_refine_df['total_weekend_gross'] = box_office_refine_df.groupby('date')['weekend_gross'].transform(np.sum)
+
+    box_office_refine_df['weekend_gross_ratio'] = box_office_refine_df['weekend_gross'] / box_office_refine_df['total_weekend_gross']
+
+
+
 def create_box_office_df():
     box_office_file = 'compiled_top_15_box_office.csv'
 
@@ -115,11 +141,12 @@ def create_box_office_df():
     box_office_date_column = 'date'
     no_of_cinemas = 'Number of cinemas'
     distributor = 'Distributor'
+
     box_office_refine_df = box_office_df[[weekend_gross_column, distributor, box_office_date_column, no_of_cinemas]]
 
     box_office_refine_df = box_office_refine_df.rename(columns={'Weekend Gross': 'weekend_gross', 'Number of cinemas': 'number_of_cinemas', 'Distributor': 'distributor'})
 
-    # box_office_refine_df['total_weekend_gross'] = box_office_refine_df.groupby('date')['Weekend Gross'].transform(np.sum)
+
     box_office_refine_df['date'] = pd.to_datetime(box_office_refine_df['date'], format='%d-%m-%Y')
 
     # aggregate data by month (to match frequency of GDP data)

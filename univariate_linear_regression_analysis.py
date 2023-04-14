@@ -24,7 +24,7 @@ https://codeburst.io/multiple-linear-regression-sklearn-and-statsmodels-79875074
 
 '''
 
-def univariate_regression_box_office_gva(gdp_df, box_office_df):
+def univariate_regression_box_office_gdp(gdp_df, box_office_df):
 
     # clearing out existing graphs
     plt.clf()
@@ -32,12 +32,12 @@ def univariate_regression_box_office_gva(gdp_df, box_office_df):
     # creating our dataframe to pass into regression
     merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
 
-    sns.regplot(x="weekend_gross", y="GVA", data=merged_df).set(title='Univariate regression of Weekend Gross vs GVA')
+    sns.regplot(x="weekend_gross", y="gdp", data=merged_df).set(title='Univariate regression of Weekend Gross vs GDP')
 
     plt.clf()
-    sns.regplot(x="weekend_gross", y="GVA", data=merged_df, order=2)
+    sns.regplot(x="weekend_gross", y="gdp", data=merged_df, order=2)
 
-def univariate_regression_monthly_admission_gva(gdp_df, monthly_admission_df):
+def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
 
     # clearing out existing graphs
     plt.clf()
@@ -45,10 +45,10 @@ def univariate_regression_monthly_admission_gva(gdp_df, monthly_admission_df):
     # creating our time series df to pass into regression
     merged_df = pd.merge(monthly_admission_df, gdp_df, on=['date_grouped'])
 
-    sns.regplot(x="monthly admissions", y="GVA", data=merged_df).set(title='Univariate regression of Monthly Admissions vs GVA')
+    sns.regplot(x="monthly admissions", y="gdp", data=merged_df).set(title='Univariate regression of Monthly Admissions vs GDP')
 
     plt.clf()
-    sns.regplot(x="monthly admissions", y="GVA", data=merged_df, order=2)
+    sns.regplot(x="monthly admissions", y="gdp", data=merged_df, order=2)
 
 def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df):
     # clearing out existing graphs
@@ -63,7 +63,7 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df)
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     X = merged_df[['date_grouped','weekend_gross','monthly admissions']]
-    Y = merged_df['GVA']
+    Y = merged_df['gdp']
 
     # initiating linear regression
     reg = LinearRegression()
@@ -72,9 +72,10 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df)
     Intercept = reg.intercept_
     Coefficients = reg.coef_
 
-    print(Intercept)  # -2931.893
-    print(Coefficients)  # [4.10063018e-03 1.34416632e-08 4.43920342e-07]
+    print(Intercept)  # -2932.196783551014
+    print(Coefficients)  # [4.10103359e-03 1.37356470e-08 4.43045784e-07]
 
+    # TODO - WIP
     # statsmodel functionality, with more detail:
     X = add_constant(X)  # to add constant value in the model
     model = OLS(Y, X).fit()  # fitting the model
@@ -85,21 +86,21 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df)
 
 
 def create_gdp_df():
-    gdp_file = 'monthly_gva_uk_cleaned.csv'
+    gdp_file = 'monthly_gdp_uk_v2_cleaned.csv'
     ### creating our gdp df
 
     gdp_df = pd.read_csv(os.path.join(os.getcwd(), 'input', gdp_file))
 
     # filter on gdp df for 1. Time period we want and 2. Columns we want
     # filter on Title, gross value
-    gdp_date_column = 'Title'
-    gross_value_column = 'Gross Value Added - Monthly (Index 1dp) :CVM SA'
-    gdp_refine_df = gdp_df[[gdp_date_column, gross_value_column]]
+    gdp_date_column = 'Month'
+    monthly_gdp = 'Monthly GDP (A-T)'
+    gdp_refine_df = gdp_df[[gdp_date_column, monthly_gdp]]
 
     # clean date column format to match DD-MM-YY format, similar to the box office df
-    gdp_refine_df = gdp_refine_df.rename(columns={gdp_date_column: "date", gross_value_column: "GVA"})
+    gdp_refine_df = gdp_refine_df.rename(columns={gdp_date_column: "date", monthly_gdp: "gdp"})
 
-    gdp_refine_df['date'] = pd.to_datetime(gdp_refine_df['date'], format='%Y %b')
+    gdp_refine_df['date'] = pd.to_datetime(gdp_refine_df['date'], format='%Y%b')
     gdp_refine_df['date_grouped'] = pd.to_datetime(gdp_refine_df['date']).apply(lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
 
     return gdp_refine_df.drop(columns=['date'])
@@ -121,7 +122,7 @@ def create_box_office_df():
     # box_office_refine_df['total_weekend_gross'] = box_office_refine_df.groupby('date')['Weekend Gross'].transform(np.sum)
     box_office_refine_df['date'] = pd.to_datetime(box_office_refine_df['date'], format='%d-%m-%Y')
 
-    # aggregate data by month (to match frequency of GVA/GDP data)
+    # aggregate data by month (to match frequency of GDP data)
     box_office_refine_df['date_grouped'] = pd.to_datetime(box_office_refine_df['date']).apply(lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
 
     box_office_grouped_df = box_office_refine_df.groupby('date_grouped')['weekend_gross', 'number_of_cinemas'].sum()
@@ -167,8 +168,8 @@ if __name__ == '__main__':
 
     monthly_admission_df = create_monthly_admission_df()
 
-    univariate_regression_box_office_gva(gdp_df, box_office_df)
+    univariate_regression_box_office_gdp(gdp_df, box_office_df)
 
-    univariate_regression_monthly_admission_gva(gdp_df, monthly_admission_df)
+    univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
     multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df)

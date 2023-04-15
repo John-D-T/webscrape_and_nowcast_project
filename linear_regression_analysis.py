@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import numpy as np
 import os
@@ -23,6 +21,14 @@ https://codeburst.io/multiple-linear-regression-sklearn-and-statsmodels-79875074
 
 
 '''
+csv_extension = '.csv'
+academy_awards = 'academy_awards'
+cinema_showings = 'cinema_showings'
+cinemas_near_me = 'cinemas_near_me'
+films = 'films'
+films_near_me = 'films_near_me'
+gdp_file = 'monthly_gdp_uk_v2_cleaned.csv'
+box_office_file = 'compiled_top_15_box_office.csv'
 
 def univariate_regression_box_office_gdp(gdp_df, box_office_df):
 
@@ -86,7 +92,6 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df)
 
 
 def create_gdp_df():
-    gdp_file = 'monthly_gdp_uk_v2_cleaned.csv'
     ### creating our gdp df
 
     gdp_df = pd.read_csv(os.path.join(os.getcwd(), 'input', gdp_file))
@@ -106,7 +111,6 @@ def create_gdp_df():
     return gdp_refine_df.drop(columns=['date'])
 
 def create_box_office_weightings_df():
-    box_office_file = 'compiled_top_15_box_office.csv'
 
     ### creating box office df
     box_office_df = pd.read_csv(os.path.join(os.getcwd(), 'output', box_office_file))
@@ -187,14 +191,36 @@ def create_monthly_admission_df():
 
     return monthly_admission_df
 
+
 def create_google_trends_df():
-    return ''
+    '''
+    Load all google trend .csv's for key words - from 2004-2023
+    :return: dataframe containing keywords
+    '''
+
+    # generating dataframes
+    academy_awards_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends', academy_awards + csv_extension), skiprows=[0,1])\
+        .rename(columns={'Academy Awards: (United Kingdom)': 'frequency_%s' % academy_awards})
+    cinema_showings_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends', cinema_showings + csv_extension), skiprows=[0,1])\
+        .rename(columns={'%s: (United Kingdom)' % cinema_showings.replace('_', ' '): 'frequency_%s' % cinema_showings})
+    cinemas_near_me_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends', cinemas_near_me + csv_extension), skiprows=[0,1])\
+        .rename(columns={'%s: (United Kingdom)' % cinemas_near_me.replace('_', ' '): 'frequency_%s' % cinemas_near_me})
+    films_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends', films + csv_extension), skiprows=[0,1])\
+        .rename(columns={'%s: (United Kingdom)' % films: 'frequency_%s' % films})
+    films_near_me_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends', films_near_me + csv_extension), skiprows=[0,1])\
+        .rename(columns={'%s: (United Kingdom)' % films_near_me.replace('_', ' '): 'frequency_%s' % films_near_me })
+
+    # merge dataframes
+    google_trends_df = pd.merge(pd.merge(pd.merge(pd.merge(academy_awards_df, cinema_showings_df, on='Month'), cinemas_near_me_df, on='Month'), films_df, on='Month'), films_near_me_df, on='Month')
+    return google_trends_df
+
 
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.max_columns', None)
 
+    # collecting independent variables
     google_trends_df = create_google_trends_df()
 
     gdp_df = create_gdp_df()
@@ -205,6 +231,7 @@ if __name__ == '__main__':
 
     monthly_admission_df = create_monthly_admission_df()
 
+    # creating regressions
     univariate_regression_box_office_gdp(gdp_df, box_office_df)
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)

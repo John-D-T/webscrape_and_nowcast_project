@@ -56,12 +56,11 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     plt.clf()
     sns.regplot(x="monthly admissions", y="gdp", data=merged_df, order=2)
 
-def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df):
+def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df):
     # clearing out existing graphs
     plt.clf()
 
-    merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
-    merged_df = pd.merge(merged_df, monthly_admission_df, on=['date_grouped'])
+    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
 
     # convert date to numerical value
     import datetime as ddt
@@ -141,7 +140,19 @@ def create_box_office_weightings_df():
     box_office_refine_df = box_office_refine_df.drop(columns=['date', 'total_weekend_gross', 'weekend_gross', 'Unnamed: 0', 'Unnamed: 0.1'])
     box_office_refine_df_by_month = box_office_refine_df.groupby(by=['rank', 'date_grouped'])['weekend_gross_ratio'].mean().reset_index()
 
-    return box_office_refine_df_by_month
+    def categorize_row(row, i):
+        if row['rank'] == i:
+            return row['weekend_gross_ratio']
+
+    # flattening dataframe
+    for i in range(1, 16):
+        box_office_refine_df_by_month['weekend_gross_ratio_rank_%s' % i] = box_office_refine_df_by_month.apply(lambda row: categorize_row(row, i), axis=1)
+
+    box_office_refine_df_by_month = box_office_refine_df_by_month.drop(columns=['rank', 'weekend_gross_ratio'])
+
+    box_office_final_df = box_office_refine_df_by_month.groupby('date_grouped', as_index=False).first()
+
+    return box_office_final_df
 
 def create_box_office_df():
     box_office_file = 'compiled_top_15_box_office.csv'
@@ -212,6 +223,7 @@ def create_google_trends_df():
 
     # merge dataframes
     google_trends_df = pd.merge(pd.merge(pd.merge(pd.merge(academy_awards_df, cinema_showings_df, on='Month'), cinemas_near_me_df, on='Month'), films_df, on='Month'), films_near_me_df, on='Month')
+    google_trends_df = google_trends_df.rename(columns={'Month': 'date_grouped'})
     return google_trends_df
 
 
@@ -221,19 +233,19 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', None)
 
     # collecting independent variables
-    google_trends_df = create_google_trends_df()
+    google_trends_df = create_google_trends_df()  # google trends dataset
 
-    gdp_df = create_gdp_df()
+    gdp_df = create_gdp_df()  # monthly gdp dataset
 
-    create_box_office_weightings_df()
+    box_office_df = create_box_office_df()  # bfi box office dataset
 
-    box_office_df = create_box_office_df()
+    box_office_weightings_df = create_box_office_weightings_df()  # bfi box office dataset, with weightings
 
-    monthly_admission_df = create_monthly_admission_df()
+    monthly_admission_df = create_monthly_admission_df()  # monthly admissions dataset
 
     # creating regressions
     univariate_regression_box_office_gdp(gdp_df, box_office_df)
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df)
+    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df)

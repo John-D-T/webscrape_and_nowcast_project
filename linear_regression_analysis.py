@@ -38,10 +38,10 @@ def univariate_regression_box_office_gdp(gdp_df, box_office_df):
     # creating our dataframe to pass into regression
     merged_df = pd.merge(box_office_df, gdp_df, on=['date_grouped'])
 
-    sns.regplot(x="weekend_gross", y="gdp", data=merged_df).set(title='Univariate regression of Weekend Gross vs GDP')
+    sns.regplot(x="monthly_gross", y="gdp", data=merged_df).set(title='Univariate regression of Weekend Gross vs GDP')
 
     plt.clf()
-    sns.regplot(x="weekend_gross", y="gdp", data=merged_df, order=2)
+    sns.regplot(x="monthly_gross", y="gdp", data=merged_df, order=2)
 
 def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
 
@@ -51,10 +51,10 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     # creating our time series df to pass into regression
     merged_df = pd.merge(monthly_admission_df, gdp_df, on=['date_grouped'])
 
-    sns.regplot(x="monthly admissions", y="gdp", data=merged_df).set(title='Univariate regression of Monthly Admissions vs GDP')
+    sns.regplot(x="monthly_admissions", y="gdp", data=merged_df).set(title='Univariate regression of Monthly Admissions vs GDP')
 
     plt.clf()
-    sns.regplot(x="monthly admissions", y="gdp", data=merged_df, order=2)
+    sns.regplot(x="monthly_admissions", y="gdp", data=merged_df, order=2)
 
 def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df):
     # clearing out existing graphs
@@ -67,7 +67,11 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
-    X = merged_df[['date_grouped','weekend_gross','monthly admissions']]
+    # TODO - add rest of independent variables
+    X = merged_df[['date_grouped','monthly_gross','monthly_admissions', 'number_of_cinemas', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_2', 'monthly_gross_ratio_rank_3', 'monthly_gross_ratio_rank_4',
+                   'monthly_gross_ratio_rank_5', 'monthly_gross_ratio_rank_6', 'monthly_gross_ratio_rank_7', 'monthly_gross_ratio_rank_8', 'monthly_gross_ratio_rank_9', 'monthly_gross_ratio_rank_10',
+                   'monthly_gross_ratio_rank_11', 'monthly_gross_ratio_rank_12', 'monthly_gross_ratio_rank_13', 'monthly_gross_ratio_rank_14', 'monthly_gross_ratio_rank_15', 'frequency_academy_awards',
+                   'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films', 'frequency_films_near_me']]
     Y = merged_df['gdp']
 
     # initiating linear regression
@@ -77,8 +81,8 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     Intercept = reg.intercept_
     Coefficients = reg.coef_
 
-    print(Intercept)  # -2932.196783551014
-    print(Coefficients)  # [4.10103359e-03 1.37356470e-08 4.43045784e-07]
+    print(Intercept)  # -2255.443730866293
+    print(Coefficients)  # [ 3.46684283e-03 -3.36704042e-08  2.38061825e-07  2.02875346e-04, -2.06275364e+02 -2.13966644e+02 -1.96083756e+02 -2.02908698e+02, -2.11805028e+02 -2.61624826e+02 -1.93369650e+02 -2.22989899e+02, -1.25068905e+02 -3.61970849e+02 -1.98135846e+02  2.58697635e+00, -3.07260330e+02 -3.03507628e+02 -1.55415957e+02 -1.86969517e-03,  8.01293711e-02  3.56540510e-03 -5.27801170e-02 -7.05375150e-03]
 
     # TODO - WIP
     # statsmodel functionality, with more detail:
@@ -146,10 +150,11 @@ def create_box_office_weightings_df():
 
     # flattening dataframe
     for i in range(1, 16):
-        box_office_refine_df_by_month['weekend_gross_ratio_rank_%s' % i] = box_office_refine_df_by_month.apply(lambda row: categorize_row(row, i), axis=1)
+        box_office_refine_df_by_month['monthly_gross_ratio_rank_%s' % i] = box_office_refine_df_by_month.apply(lambda row: categorize_row(row, i), axis=1)
 
     box_office_refine_df_by_month = box_office_refine_df_by_month.drop(columns=['rank', 'weekend_gross_ratio'])
 
+    # read https://stackoverflow.com/questions/52899858/collapsing-rows-with-nan-entries-in-pandas-dataframe
     box_office_final_df = box_office_refine_df_by_month.groupby('date_grouped', as_index=False).first()
 
     return box_office_final_df
@@ -178,6 +183,8 @@ def create_box_office_df():
     box_office_grouped_df = box_office_refine_df.groupby('date_grouped')['weekend_gross', 'number_of_cinemas'].sum()
     box_office_grouped_df = box_office_grouped_df.reset_index()
 
+    box_office_grouped_df = box_office_grouped_df.rename(columns={'weekend_gross': 'monthly_gross'})
+
     '''
     to make sure that box_office_grouped_df aggregates as expected, we check 
     1. box_office_refine_df['date_grouped'] = box_office_refine_df['date_grouped'].astype("string")
@@ -199,6 +206,7 @@ def create_monthly_admission_df():
 
     # creating monthly admissions df
     monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'input', monthly_admissions_file), thousands=',')
+    monthly_admission_df = monthly_admission_df.rename(columns={'monthly admissions': 'monthly_admissions'})
 
     return monthly_admission_df
 
@@ -224,6 +232,7 @@ def create_google_trends_df():
     # merge dataframes
     google_trends_df = pd.merge(pd.merge(pd.merge(pd.merge(academy_awards_df, cinema_showings_df, on='Month'), cinemas_near_me_df, on='Month'), films_df, on='Month'), films_near_me_df, on='Month')
     google_trends_df = google_trends_df.rename(columns={'Month': 'date_grouped'})
+    google_trends_df['date_grouped'] = pd.to_datetime(google_trends_df['date_grouped']).apply(lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
     return google_trends_df
 
 

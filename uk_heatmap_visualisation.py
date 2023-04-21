@@ -7,11 +7,13 @@ https://medium.com/@patohara60/interactive-mapping-in-python-with-uk-census-data
 
 Cinema post-code plot (2 options):
 https://github.com/bkontonis/Plot-PostCodes-on-Interactive-Map-Using-Python
-https://towardsdatascience.com/redlining-mapping-inequality-in-peer-2-peer-lending-using-geopandas-part-2-9d8af584df0b
+https://stackoverflow.com/questions/58043978/display-data-on-real-map-based-on-postal-code
+https://medium.com/@patohara60/interactive-mapping-in-python-with-uk-census-data-6e571c60ff4
+https://stackoverflow.com/questions/61156007/mapping-uk-postcodes-to-geographic-boundaries-for-plotting
 
 '''
-import rasterio
-import GDAL
+# import rasterio
+# import GDAL
 '''
       INFO:root:Building on Windows requires extra options to setup.py to locate needed GDAL files. More information is available in the README.
       ERROR: A GDAL API version must be specified. Provide a path to gdal-config using a GDAL_CONFIG environment variable or use a GDAL_VERSION environment variable.
@@ -35,8 +37,8 @@ Comment on whether coverage is good - can add to intro (justification for study)
 # tif file
 
 
-tif_file = rasterio.open('../../HumanImpact/population/data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif')
-ghs_data = tif_file.read()
+#tif_file = rasterio.open('../../HumanImpact/population/data/GHS_POP_E2015_GLOBE_R2019A_4326_30ss_V1_0.tif')
+#ghs_data = tif_file.read()
 
 # generate population heatmap
 

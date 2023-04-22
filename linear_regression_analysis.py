@@ -1,17 +1,24 @@
 import pandas as pd
 import numpy as np
 import os
-import sklearn
-import scipy
+
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-import statsmodels
+
 from statsmodels.tools.tools import add_constant
 from statsmodels.regression.linear_model import OLS
 
+# potentially useful imports later:
+# import scipy
+
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
+
+pip install seaborn
+pip install scipy 
+pip install sklearn
+pip install statsmodel
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e

@@ -110,3 +110,4 @@ test/
 *.html
 *.txt
 !requirements.txt
+/population_cinema_heatmap/gbr_ppp_2020_UNadj.tif

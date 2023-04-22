@@ -1,5 +1,11 @@
+from pytrends.request import TrendReq
+import plotly.express as px
+
 """
+PYTHON 3.8 (64 BIT)
+
 pip install pytrends
+pip install plotly
 
 https://lazarinastoy.com/the-ultimate-guide-to-pytrends-google-trends-api-with-python/
 https://www.npmjs.com/package/google-trends-api#interestByRegion
@@ -10,10 +16,8 @@ https://www.npmjs.com/package/google-trends-api#interestByRegion
 
 # TODO - weight by graph here: https://www.internetlivestats.com/google-search-statistics/
 # NO NEED TO weigh, google trends does that automatically
-# connect to google
 
-from pytrends.request import TrendReq
-
+# Connect to google
 pytrends = TrendReq(hl='en-US', tz=360, geo='GB')
 
 # build payload
@@ -27,7 +31,6 @@ data = pytrends.interest_over_time()
 data = data.reset_index()
 
 
-import plotly.express as px
 
 fig = px.line(data, x="date", y=['restaurants nearby'], title='Keyword Web Search Interest Over Time')
 fig.show()

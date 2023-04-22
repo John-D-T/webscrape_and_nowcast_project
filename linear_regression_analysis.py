@@ -10,17 +10,16 @@ import statsmodels
 from statsmodels.tools.tools import add_constant
 from statsmodels.regression.linear_model import OLS
 
-'''
-      PYTHON 3.7 (64 BIT) - Found more compatible. No issues when installing scipy and scikit learn
+"""
+PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e
 https://medium.com/analytics-vidhya/the-pitfalls-of-linear-regression-and-how-to-avoid-them-b93626e1a020
 https://towardsdatascience.com/regression-plots-in-python-with-seaborn-118472b12e3d
 https://codeburst.io/multiple-linear-regression-sklearn-and-statsmodels-798750747755
+"""
 
-
-'''
 csv_extension = '.csv'
 academy_awards = 'academy_awards'
 cinema_showings = 'cinema_showings'

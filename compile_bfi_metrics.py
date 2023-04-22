@@ -1,15 +1,13 @@
-
 import os
 from datetime import datetime
 import pandas as pd
-import xlrd
 
 """
+PYTHON 3.8 (64 BIT)
+
 pip install xlrd
 pip install Jinja
 """
-
-# pd.set_option('display.max_columns', None)
 
 def creating_clean_df_using_excel():
     bfi_subfolder = 'bfi_data'

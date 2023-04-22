@@ -1,4 +1,9 @@
-'''
+"""
+PYTHON 3.8 (64 BIT)
+
+pip install pip install GDAL-3.3.3-cp38-cp38-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+pip install rasterio
+
 Population heatmap:
 https://towardsdatascience.com/creating-beautiful-population-density-maps-with-python-fcdd84035e06
 
@@ -11,11 +16,7 @@ https://stackoverflow.com/questions/58043978/display-data-on-real-map-based-on-p
 https://medium.com/@patohara60/interactive-mapping-in-python-with-uk-census-data-6e571c60ff4
 https://stackoverflow.com/questions/61156007/mapping-uk-postcodes-to-geographic-boundaries-for-plotting
 
-      PYTHON 3.8 (64 BIT)
-
-      pip install pip install GDAL-3.3.3-cp38-cp38-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-      pip install rasterio
-'''
+"""
 
 import rasterio
 import os

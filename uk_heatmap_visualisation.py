@@ -62,7 +62,7 @@ def generate_heatmap():
     plt.imshow(np.log10(uk_worldpop_raster_tot + 1), norm=norm, cmap=newcmap)
     bar = plt.colorbar(fraction=0.1)
 
-    # TODO - plot population density values on the right with each colour - note that the max value is 1193 people per square kilometer
+    # TODO - plot population density values on the right with each colour - note that the max value is 1193 people per pixel (100 metres)
 
     # load data containing all cinemas in the UK (google scrape)
 

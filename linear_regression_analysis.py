@@ -11,7 +11,7 @@ from statsmodels.tools.tools import add_constant
 from statsmodels.regression.linear_model import OLS
 
 '''
-3.8 SHAKY, BUT WORKS ON 3.7 VENV - different versions = more compatible? No issues when installing scipy and scikit learn
+      PYTHON 3.7 (64 BIT) - Found more compatible. No issues when installing scipy and scikit learn
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e

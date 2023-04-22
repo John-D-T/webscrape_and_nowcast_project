@@ -21,6 +21,7 @@ import rasterio
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from matplotlib import cm
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap
@@ -49,7 +50,6 @@ def generate_heatmap():
     Then compare to a population of the UK (heatmap)
     Comment on whether coverage is good - can add to intro (justification for study)
     '''
-
     norm, newcmap = prepare_map_colour_scheme()
 
     # load data containing UK population - obtained from https://hub.worldpop.org/geodata/summary?id=29480
@@ -64,9 +64,16 @@ def generate_heatmap():
 
     # TODO - plot population density values on the right with each colour - note that the max value is 1193 people per pixel (100 metres)
 
+
+def generate_postcode_mapping():
+
     # load data containing all cinemas in the UK (google scrape)
+    cinema_file = "2023-03-08_list_of_cinemas_refined_v2.csv"
+    list_of_cinemas_df = pd.read_csv(os.path.join(os.getcwd(), 'output', cinema_file))
 
     # generate cinema plot
 
 if __name__ == '__main__':
-    generate_heatmap()
+    #generate_heatmap()
+
+    generate_postcode_mapping()

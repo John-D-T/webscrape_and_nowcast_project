@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from googlemaps import GoogleMapsScraper
-from datetime import datetime, timedelta
+from google_maps_scraper.googlemaps import GoogleMapsScraper
+from datetime import datetime
 import argparse
 import csv
 from termcolor import colored
-import time
 import pandas as pd
 import os
 

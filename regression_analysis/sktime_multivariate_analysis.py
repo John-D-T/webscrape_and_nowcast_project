@@ -65,7 +65,7 @@ def create_gdp_df():
     gdp_file = 'monthly_gva_uk_cleaned.csv'
     ### creating our gdp df
 
-    gdp_df = pd.read_csv(os.path.join(os.getcwd(), 'input', gdp_file))
+    gdp_df = pd.read_csv(os.path.join(os.getcwd(), 'auxilliary_data', gdp_file))
 
     # filter on gdp df for 1. Time period we want and 2. Columns we want
     # filter on Title, gross value
@@ -124,7 +124,7 @@ def create_monthly_admission_df():
     monthly_admissions_file = 'monthly_admissions_uk.csv'
 
     # creating monthly admissions df
-    monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'input', monthly_admissions_file))
+    monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'auxilliary_data', monthly_admissions_file))
 
     return monthly_admission_df
 

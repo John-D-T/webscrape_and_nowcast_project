@@ -6,7 +6,7 @@ from datetime import datetime
 
 from termcolor import colored
 
-from googlemaps import GoogleMapsScraper
+from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 #https://sites.google.com/site/tomihasa/google-language-codes
 
@@ -50,7 +50,7 @@ def csv_writer(source_field,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
     parser.add_argument('--N', type=int, default=10, help='Number of cinema to scrape')
-    # parser.add_argument('--i', type=str, default='input/urls_location.txt', help='target URLs files')
+    # parser.add_argument('--i', type=str, default='auxilliary_data/urls_location.txt', help='target URLs files')
     parser.add_argument('--sort_by', type=str, default='£', help='most_relevant or closest')
     parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
     parser.add_argument('--debug', dest='debug', action='store_true', help='Run scraper using browser graphical interface')

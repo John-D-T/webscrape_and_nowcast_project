@@ -64,7 +64,7 @@ def twitter_scrape(keyword, year, list_of_processed_files):
                 except Exception as e:
                     string_issue = 'issue in %s due to %s' % (file_name, e)
                     print(string_issue)
-                    with open('errors.txt', 'a+') as file:
+                    with open('../errors.txt', 'a+') as file:
                         file.write(string_issue + '\n')
 
         time.sleep(600)

@@ -349,7 +349,7 @@ class GoogleMapsScraper:
         logger.setLevel(logging.DEBUG)
 
         # create console handler and set level to debug
-        fh = logging.FileHandler('gm-scraper.log')
+        fh = logging.FileHandler('../gm-scraper.log')
         fh.setLevel(logging.DEBUG)
 
         # create formatter

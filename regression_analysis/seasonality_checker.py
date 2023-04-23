@@ -4,6 +4,9 @@ Plot all data sources - see if there is seasonality (regular fluctuations)
 
 interactive dummy?
 Also can eyeball residuals, to see first if it's worth adding.
+
+read: https://towardsdatascience.com/finding-seasonal-trends-in-time-series-data-with-python-ce10c37aa861
+      https://machinelearningmastery.com/time-series-seasonality-with-python/
 """
 
 from pandas import read_csv

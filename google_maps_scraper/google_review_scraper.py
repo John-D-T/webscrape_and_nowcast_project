@@ -7,9 +7,6 @@ from termcolor import colored
 import pandas as pd
 import os
 
-#https://sites.google.com/site/tomihasa/google-language-codes
-
-
 """
 pip install bs4
 pip install selenium
@@ -25,14 +22,12 @@ pip install pymongo
 
 
 ind = {'most_relevant' : 0 , 'newest' : 1, 'highest_rating' : 2, 'lowest_rating' : 3 }
-# TODO - add 'location' to HEADER list
 HEADER = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date', 'retrieval_date', 'rating', 'username', 'n_review_user', 'n_photo_user', 'url_user']
 HEADER_W_SOURCE = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date','retrieval_date', 'rating', 'username', 'n_review_user', 'n_photo_user', 'url_user', 'url_source']
 
 
-def csv_writer(source_field,
-               path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/output/'):
-    outfile= str(datetime.now().date()) + '_gm_reviews.csv'
+def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
+    outfile= str(datetime.now().date()) + '_list_of_reviews.csv'
     targetfile = open(path + outfile, mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
 

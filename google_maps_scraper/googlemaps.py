@@ -14,6 +14,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
+"""
+pip install bs4
+pip install selenium
+pip install webdriver_manager
+"""
+
 GM_WEBPAGE = 'https://www.google.com/maps/'
 MAX_WAIT = 10
 MAX_RETRY = 5
@@ -196,6 +202,65 @@ class GoogleMapsScraper:
 
         return parsed_restaurants
 
+    def get_cinema_postcode(self, offset, postcode_category):
+
+        # scroll to load restaurants
+
+        # wait for other reviews to load (ajax)
+        time.sleep(4)
+
+        # parse reviews
+        response = BeautifulSoup(self.driver.page_source, 'html.parser')
+
+        # TODO - I think there is no need to scroll, but will double check
+        # ## Function to scroll the side bar down to the end - no need to sc
+        # start = timeit.default_timer()
+        #
+        # # identify scrolling element first
+        # scrolling_element_xpath = '/html/body/div[3]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div[1]'
+        # scrolling_element = self.driver.find_element('xpath', scrolling_element_xpath)
+        #
+        # ## need to find a way to keep scrolling until end without specifying
+        # SCROLL_PAUSE_TIME = 2.0
+        #
+        # # Get scroll height
+        # last_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
+        # print(last_height)
+        #
+        # t = 0
+        # while True:
+        #     # print(t)
+        #     t = t + 1
+        #     # Scroll down to bottom
+        #     self.driver.execute_script('arguments[0].scrollTo(0, arguments[0].scrollHeight)', scrolling_element)
+        #
+        #     # Wait to load page
+        #     time.sleep(SCROLL_PAUSE_TIME)
+        #
+        #     # Calculate new scroll height and compare with last scroll height
+        #     new_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
+        #     # print(new_height)
+        #     if new_height == last_height:
+        #         break
+        #     last_height = new_height
+        #
+        # stop = timeit.default_timer()
+        #
+        # print('Time taken: ', stop - start)
+
+        # TODO - refactor this to just look for the divs containing: 1. postcode and 2. the name of the cinema
+        rblock = response.find_all('div', class_='Nv2PK THOPZb CpccDe')
+        parsed_restaurants = []
+        # TODO - no need to loop through all - we're already on the page we want.
+        for index, review in enumerate(rblock):
+            if index >= offset:
+                parsed_restaurants.append(self.__parse_cinema(review, postcode_category))
+
+                # logging to std out
+                print(self.__parse_cinema(review, postcode_category))
+
+        return parsed_restaurants
+
     def get_account(self, url):
 
         self.driver.get(url)
@@ -284,6 +349,9 @@ class GoogleMapsScraper:
         return item
 
     def __parse_cinema(self, review, postcode):
+        """
+        The function generates all the relevant parameters we want for each cinema we scrape.
+        """
 
         item = {}
 

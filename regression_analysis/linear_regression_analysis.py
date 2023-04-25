@@ -122,7 +122,7 @@ def create_gdp_df():
 def create_box_office_weightings_df():
 
     ### creating box office df
-    box_office_df = pd.read_csv(os.path.join(os.getcwd(), 'output', box_office_file))
+    box_office_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'bfi_data_compile', 'output', box_office_file))
 
     weekend_gross_column = 'Weekend Gross'
     box_office_date_column = 'date'
@@ -169,7 +169,7 @@ def create_box_office_df():
     box_office_file = 'compiled_top_15_box_office.csv'
 
     ### creating box office df
-    box_office_df = pd.read_csv(os.path.join(os.getcwd(), 'output', box_office_file))
+    box_office_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'bfi_data_compile', 'output', box_office_file))
 
     weekend_gross_column = 'Weekend Gross'
     box_office_date_column = 'date'

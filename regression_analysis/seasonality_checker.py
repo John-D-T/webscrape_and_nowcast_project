@@ -11,7 +11,8 @@ read: https://towardsdatascience.com/finding-seasonal-trends-in-time-series-data
       https://machinelearningmastery.com/time-series-seasonality-with-python/
 """
 
-from pandas import read_csv
+import pandas as pd
+import numpy as np
 from matplotlib import pyplot
 import os
 from regression_analysis.linear_regression_analysis import create_box_office_df
@@ -26,7 +27,7 @@ def checking_google_trends_for_seasonality():
     filepath = os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', 'academy_awards.csv')
 
     # index_col helps adjust x axis to fit months
-    df = read_csv(filepath, skiprows=[0,1], index_col="Month")
+    df = pd.read_csv(filepath, skiprows=[0,1], index_col="Month")
 
     ax = df.plot(title='')
 
@@ -35,38 +36,48 @@ def checking_google_trends_for_seasonality():
 
 
 def checking_bfi_box_office_for_seasonality():
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 150)
+
     # clearing out existing graphs
     pyplot.clf()
 
     df = create_box_office_df()
 
-    df = df.set_index('date_grouped')
+    # converting date to a yyyy_mm_dd_format in order to fit the 'MS' frequency for the modelling later
+    df['date_yyyy_mm_dd'] = pd.to_datetime(['{}-01'.format(y_m) for y_m in df.date_grouped])
+
+    df = df.sort_values(by='date_yyyy_mm_dd', ascending=False)
+    df = df.set_index('date_yyyy_mm_dd')
     df_subset = df['monthly_gross']
 
-    # TODO - figure out how to plot label for y-axis
+    # TODO - figure what the title, xlabel, and ylabel should be
     ax = df_subset.plot(title='')
 
     ax.set(xlabel='x axis', ylabel='y axis')
     pyplot.show()
 
-    # TODO - fluctuations not as visually obvious, so add python checked for seasonality
+    # Fluctuations not as visually obvious, so add python checked for seasonality
 
-    analysis = df[['monthly_gross']].copy()
+    # Converting the NaN to zeroes (because box office was actually 0 during covid)
+    # Might need to cut down the range of dates then (won't work with multiplicative model)
+    df_subset = df_subset.asfreq('MS').fillna(0)
 
-    # TODO - https://stackoverflow.com/questions/60017052/decompose-for-time-series-valueerror-you-must-specify-a-period-or-x-must-be
-    decompose_result_mult = seasonal_decompose(analysis, model="multiplicative")
+    decompose_result_mult = seasonal_decompose(df_subset, model="additive")
 
     trend = decompose_result_mult.trend
     seasonal = decompose_result_mult.seasonal
     residual = decompose_result_mult.resid
 
+    # TODO - make sense of the plot
     decompose_result_mult.plot()
 
 def checking_monthly_admissions_for_seasonality():
     # clearing out existing graphs
     pyplot.clf()
 
-    series = read_csv('.csv', header=0, index_col=0)
+    series = pd.read_csv('.csv', header=0, index_col=0)
     series.plot()
     pyplot.show()
 

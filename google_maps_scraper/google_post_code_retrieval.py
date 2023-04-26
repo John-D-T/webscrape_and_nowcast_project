@@ -2,12 +2,17 @@ import argparse
 import csv
 import os
 from datetime import datetime
+import time
 
 from termcolor import colored
+
+import pandas as pd
 
 from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 """
+PYTHON 3.8 (64 BIT) 
+
 pip install bs4
 pip install selenium
 pip install beautifulsoup4
@@ -25,7 +30,7 @@ HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
 HEADER_W_SOURCE = ['cinema_name', 'category', 'cinema_url', 'postcode_category', 'url_source']
 
 def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
-    outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
+    outfile= str(datetime.now().date()) + '_cinema_and_post_codes.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
 
@@ -52,13 +57,18 @@ if __name__ == '__main__':
     # store reviews in CSV file
     writer = csv_writer(args.source)
 
-    list_of_all_cinemas = []
-
     # TODO - generate list of urls - create list from dataframe (list_of_cinemas)
 
+    cinema_df = pd.read_csv(os.path.join(os.getcwd(), 'output', '2023-03-08_list_of_cinemas_refined_v2.csv'))
+
+    list_of_all_cinema_urls = cinema_df['cinema_url'].values.tolist()
+
     with GoogleMapsScraper(debug=args.debug) as scraper:
-        for url in list_of_all_cinemas:
-            postcode_category = url.split('in+')[1]
+        for url in list_of_all_cinema_urls:
+            # Timer to break up the scrapes
+            print("Waiting for 30 seconds.")
+            time.sleep(30)
+
             print(url)
             scraper.bypass_cookies(url, price_filter_dict[args.sort_by])
 
@@ -67,9 +77,9 @@ if __name__ == '__main__':
             while n < args.N:
 
                 # logging to std out
-                print(colored('[ Cinemas collected: ' + str(n) + ']', 'cyan'))
+                print(colored('[ Cinema and post codes collected: ' + str(n) + ']', 'cyan'))
 
-                list_of_cinemas = scraper.get_cinema_postcode(n, postcode_category)
+                list_of_cinemas = scraper.get_cinema_postcode(n)
                 if len(list_of_cinemas) == 0:
                     break
 

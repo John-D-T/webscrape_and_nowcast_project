@@ -202,9 +202,7 @@ class GoogleMapsScraper:
 
         return parsed_restaurants
 
-    def get_cinema_postcode(self, offset, postcode_category):
-
-        # scroll to load restaurants
+    def get_cinema_postcode(self, offset):
 
         # wait for other reviews to load (ajax)
         time.sleep(4)
@@ -254,10 +252,10 @@ class GoogleMapsScraper:
         # TODO - no need to loop through all - we're already on the page we want.
         for index, review in enumerate(rblock):
             if index >= offset:
-                parsed_restaurants.append(self.__parse_cinema(review, postcode_category))
+                parsed_restaurants.append(self.__parse_cinema_postcode(review))
 
                 # logging to std out
-                print(self.__parse_cinema(review, postcode_category))
+                print(self.__parse_cinema_postcode(review))
 
         return parsed_restaurants
 
@@ -349,6 +347,38 @@ class GoogleMapsScraper:
         return item
 
     def __parse_cinema(self, review, postcode):
+        """
+        The function generates all the relevant parameters we want for each cinema we scrape.
+        """
+
+        item = {}
+
+        try:
+            cinema_name = review['aria-label']
+        except Exception as e:
+            cinema_name = None
+
+        try:
+            category = review.contents[1].contents[3].contents[0].contents[0].contents[1].contents[3].contents[7]\
+            .contents[3].contents[1].contents[1].contents[3].contents[0]
+        except Exception as e:
+            category = None
+
+        try:
+            cinema_url = review.find('a')['href']
+        except Exception as e:
+            cinema_url = None
+
+        # store datetime of scraping and apply further processing to calculate
+        # correct date as retrieval_date - time(relative_date)
+        item['cinema_name'] = cinema_name
+        item['category'] = category
+        item['cinema_url'] = cinema_url
+        item['postcode_category'] = postcode
+
+        return item
+
+    def __parse_cinema_postcode(self, review, postcode):
         """
         The function generates all the relevant parameters we want for each cinema we scrape.
         """

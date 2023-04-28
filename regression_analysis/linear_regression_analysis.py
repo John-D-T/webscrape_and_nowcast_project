@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from statsmodels.tools.tools import add_constant
 from statsmodels.regression.linear_model import OLS
 
+from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
+
 # potentially useful imports later:
 # import scipy
 
@@ -68,6 +70,7 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
 
+    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
     # convert date to numerical value
     import datetime as ddt
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])

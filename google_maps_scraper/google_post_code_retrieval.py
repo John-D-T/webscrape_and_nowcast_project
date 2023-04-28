@@ -57,37 +57,31 @@ if __name__ == '__main__':
     # store reviews in CSV file
     writer = csv_writer(args.source)
 
-    # TODO - generate list of urls - create list from dataframe (list_of_cinemas)
-
     cinema_df = pd.read_csv(os.path.join(os.getcwd(), 'output', '2023-03-08_list_of_cinemas_refined_v2.csv'))
 
     list_of_all_cinema_urls = cinema_df['cinema_url'].values.tolist()
 
     with GoogleMapsScraper(debug=args.debug) as scraper:
+        i = 0
         for url in list_of_all_cinema_urls:
             # Timer to break up the scrapes
-            print("Waiting for 30 seconds.")
-            time.sleep(30)
+            # print("Waiting for 30 seconds.")
+            # time.sleep(30)
 
+            i += 1
             print(url)
             scraper.bypass_cookies(url, price_filter_dict[args.sort_by])
 
-            n = 0
+            # logging to std out
+            print(colored('[ Cinema and post codes collected: ' + str(i) + ']', 'cyan'))
 
-            while n < args.N:
+            list_of_cinemas = scraper.get_cinema_postcode(url)
+            if len(list_of_cinemas) == 0:
+                break
 
-                # logging to std out
-                print(colored('[ Cinema and post codes collected: ' + str(n) + ']', 'cyan'))
+            for r in list_of_cinemas:
+                row_data = list(r.values())
+                if args.source:
+                    row_data.append(url[:-1])
 
-                list_of_cinemas = scraper.get_cinema_postcode(n)
-                if len(list_of_cinemas) == 0:
-                    break
-
-                for r in list_of_cinemas:
-                    row_data = list(r.values())
-                    if args.source:
-                        row_data.append(url[:-1])
-
-                    writer.writerow(row_data)
-
-                n += len(list_of_cinemas)
+                writer.writerow(row_data)

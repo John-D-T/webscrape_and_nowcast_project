@@ -202,7 +202,7 @@ class GoogleMapsScraper:
 
         return parsed_restaurants
 
-    def get_cinema_postcode(self, offset):
+    def get_cinema_postcode(self, url):
 
         # wait for other reviews to load (ajax)
         time.sleep(4)
@@ -247,15 +247,18 @@ class GoogleMapsScraper:
         # print('Time taken: ', stop - start)
 
         # TODO - refactor this to just look for the divs containing: 1. postcode and 2. the name of the cinema
-        rblock = response.find_all('div', class_='Nv2PK THOPZb CpccDe')
+        #rblock = response.find_all('div', class_='Nv2PK THOPZb CpccDe')
+        rblock = response.find_all('div', class_='m6QErb WNBkOb')
         parsed_restaurants = []
-        # TODO - no need to loop through all - we're already on the page we want.
         for index, review in enumerate(rblock):
-            if index >= offset:
-                parsed_restaurants.append(self.__parse_cinema_postcode(review))
+            if index == 0:
+                postcode_block = response.find_all('div', class_='RcCsl fVHpi w4vB1d NOE9ve M0S7ae AG25L')[0]
+                full_postcode = postcode_block.contents[0]['aria-label']
+                postcode = ' '.join(full_postcode.split(' ')[-3:]).strip()
+                parsed_restaurants.append(self.__parse_cinema_postcode(full_postcode, postcode, url))
 
                 # logging to std out
-                print(self.__parse_cinema_postcode(review))
+                print(self.__parse_cinema_postcode(full_postcode, postcode, url))
 
         return parsed_restaurants
 
@@ -378,7 +381,7 @@ class GoogleMapsScraper:
 
         return item
 
-    def __parse_cinema_postcode(self, review, postcode):
+    def __parse_cinema_postcode(self, full_postcode, postcode, url):
         """
         The function generates all the relevant parameters we want for each cinema we scrape.
         """
@@ -386,27 +389,24 @@ class GoogleMapsScraper:
         item = {}
 
         try:
-            cinema_name = review['aria-label']
+            full_postcode = full_postcode
         except Exception as e:
-            cinema_name = None
+            full_postcode = None
+        try:
+            postcode = postcode
+        except Exception as e:
+            postcode = None
 
         try:
-            category = review.contents[1].contents[3].contents[0].contents[0].contents[1].contents[3].contents[7]\
-            .contents[3].contents[1].contents[1].contents[3].contents[0]
-        except Exception as e:
-            category = None
-
-        try:
-            cinema_url = review.find('a')['href']
+            cinema_url = url
         except Exception as e:
             cinema_url = None
 
         # store datetime of scraping and apply further processing to calculate
         # correct date as retrieval_date - time(relative_date)
-        item['cinema_name'] = cinema_name
-        item['category'] = category
-        item['cinema_url'] = cinema_url
-        item['postcode_category'] = postcode
+        item['cinema_url'] = url
+        item['full_postcode'] = full_postcode
+        item['postcode'] = postcode
 
         return item
 

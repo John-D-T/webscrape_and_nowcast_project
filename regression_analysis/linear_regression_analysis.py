@@ -106,7 +106,7 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 def create_gdp_df():
     ### creating our gdp df
 
-    gdp_df = pd.read_csv(os.path.join(os.getcwd(), 'auxilliary_data', gdp_file))
+    gdp_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'auxilliary_data', gdp_file))
 
     # filter on gdp df for 1. Time period we want and 2. Columns we want
     # filter on Title, gross value
@@ -214,7 +214,7 @@ def create_monthly_admission_df():
     monthly_admissions_file = 'monthly_admissions_uk.csv'
 
     # creating monthly admissions df
-    monthly_admission_df = pd.read_csv(os.path.join(os.getcwd(), 'auxilliary_data', monthly_admissions_file), thousands=',')
+    monthly_admission_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'auxilliary_data', monthly_admissions_file), thousands=',')
     monthly_admission_df = monthly_admission_df.rename(columns={'monthly admissions': 'monthly_admissions'})
 
     return monthly_admission_df
@@ -227,15 +227,15 @@ def create_google_trends_df():
     '''
 
     # generating dataframes
-    academy_awards_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends_scraper', academy_awards + csv_extension), skiprows=[0,1])\
+    academy_awards_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', academy_awards + csv_extension), skiprows=[0,1])\
         .rename(columns={'Academy Awards: (United Kingdom)': 'frequency_%s' % academy_awards})
-    cinema_showings_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends_scraper', cinema_showings + csv_extension), skiprows=[0,1])\
+    cinema_showings_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', cinema_showings + csv_extension), skiprows=[0,1])\
         .rename(columns={'%s: (United Kingdom)' % cinema_showings.replace('_', ' '): 'frequency_%s' % cinema_showings})
-    cinemas_near_me_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends_scraper', cinemas_near_me + csv_extension), skiprows=[0,1])\
+    cinemas_near_me_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', cinemas_near_me + csv_extension), skiprows=[0,1])\
         .rename(columns={'%s: (United Kingdom)' % cinemas_near_me.replace('_', ' '): 'frequency_%s' % cinemas_near_me})
-    films_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends_scraper', films + csv_extension), skiprows=[0,1])\
+    films_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', films + csv_extension), skiprows=[0,1])\
         .rename(columns={'%s: (United Kingdom)' % films: 'frequency_%s' % films})
-    films_near_me_df = pd.read_csv(os.path.join(os.getcwd(), 'google_trends_scraper', films_near_me + csv_extension), skiprows=[0,1])\
+    films_near_me_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', films_near_me + csv_extension), skiprows=[0,1])\
         .rename(columns={'%s: (United Kingdom)' % films_near_me.replace('_', ' '): 'frequency_%s' % films_near_me })
 
     # merge dataframes
@@ -262,8 +262,8 @@ if __name__ == '__main__':
     monthly_admission_df = create_monthly_admission_df()  # monthly admissions dataset
 
     # creating regressions
-    univariate_regression_box_office_gdp(gdp_df, box_office_df)
+    #univariate_regression_box_office_gdp(gdp_df, box_office_df)
 
-    univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
+    #univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
     multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df)

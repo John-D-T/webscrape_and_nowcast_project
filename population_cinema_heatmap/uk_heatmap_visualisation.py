@@ -69,10 +69,11 @@ def generate_heatmap():
 def generate_postcode_mapping():
 
     # load data containing all cinemas in the UK (google scrape)
-    cinema_file = "2023-03-08_list_of_cinemas_refined_v2.csv"
-    list_of_cinemas_df = pd.read_csv(os.path.join(os.getcwd(), 'output', cinema_file))
+    cinema_file = "2023-04-28_cinema_and_post_codes.csv"
+    list_of_cinemas_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_maps_scraper', 'output', cinema_file))
 
-    # generate cinema plot
+    # TODO - generate cinema plot
+
 
 if __name__ == '__main__':
     #generate_heatmap()

@@ -26,8 +26,8 @@ pip install pymongo
 """
 
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
-HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
-HEADER_W_SOURCE = ['cinema_name', 'category', 'cinema_url', 'postcode_category', 'url_source']
+HEADER = ['cinema_url', 'full_postcode', 'postcode']
+HEADER_W_SOURCE = ['cinema_url', 'full_postcode', 'postcode']
 
 def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
     outfile= str(datetime.now().date()) + '_cinema_and_post_codes.csv'

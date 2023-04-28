@@ -10,11 +10,8 @@ https://towardsdatascience.com/creating-beautiful-population-density-maps-with-p
 Alternative:
 https://medium.com/@patohara60/interactive-mapping-in-python-with-uk-census-data-6e571c60ff4
 
-Cinema post-code plot (several options):
+Cinema post-code plot - best option so far:
 https://github.com/bkontonis/Plot-PostCodes-on-Interactive-Map-Using-Python
-https://stackoverflow.com/questions/58043978/display-data-on-real-map-based-on-postal-code
-https://medium.com/@patohara60/interactive-mapping-in-python-with-uk-census-data-6e571c60ff4
-https://stackoverflow.com/questions/61156007/mapping-uk-postcodes-to-geographic-boundaries-for-plotting
 
 """
 
@@ -69,10 +66,11 @@ def generate_heatmap():
 def generate_postcode_mapping():
 
     # load data containing all cinemas in the UK (google scrape)
-    cinema_file = "2023-04-28_cinema_and_post_codes.csv"
-    list_of_cinemas_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_maps_scraper', 'output', cinema_file))
+    cinema_file = "2023-04-27_cinema_and_post_codes.csv"
+    list_of_cinemas_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_maps_scraper', 'output', cinema_file), header=0)
+    list_of_postcodes = list_of_cinemas_df['postcode'].tolist()
 
-    # TODO - generate cinema plot
+    # TODO - passing postcodes into map
 
 
 if __name__ == '__main__':

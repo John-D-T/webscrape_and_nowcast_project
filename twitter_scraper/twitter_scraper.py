@@ -21,8 +21,8 @@ import datetime
 import time
 import os
 
-def twitter_scrape(keyword, year, list_of_processed_files):
-    for month in range(9, 13):
+def twitter_scrape(keyword, year, list_of_processed_files, dry_run=False):
+    for month in range(1, 13):
         for day in range(1, 32):
             if month == 2 and day > 28:
                 break
@@ -59,7 +59,12 @@ def twitter_scrape(keyword, year, list_of_processed_files):
                     if file_name in list_of_processed_files:
                         print('already processed %s' % file_name)
                     else:
-                        twint.run.Search(c)
+                        if dry_run:
+                            with open('../list_of_unprocessed_dates.txt', 'a+') as file:
+                                file.write("'" + file_name + "',")
+                        else:
+                            #twint.run.Search(c)
+                            print('eh')
 
                 except Exception as e:
                     string_issue = 'issue in %s due to %s' % (file_name, e)
@@ -67,7 +72,8 @@ def twitter_scrape(keyword, year, list_of_processed_files):
                     with open('../errors.txt', 'a+') as file:
                         file.write(string_issue + '\n')
 
-        time.sleep(600)
+        if not dry_run:
+            time.sleep(600)
 
 def obtain_list_of_unprocessed_files(keyword):
     list_of_processed_files = []
@@ -79,11 +85,13 @@ def obtain_list_of_unprocessed_files(keyword):
 
     return list_of_processed_files
 
+
 if __name__ == '__main__':
-    keyword = "odeon"
+    dry_run = True
+    keyword = "odeon"    # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
-    # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
-    years = [year for year in range(2012, 2013)]
+    years = [year for year in range(2010, 2023)]
     for year in years:
-        twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files)
-        time.sleep(3600)
+        twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files, dry_run=dry_run)
+        if not dry_run:
+            time.sleep(3600)

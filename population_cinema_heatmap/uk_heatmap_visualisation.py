@@ -1,8 +1,9 @@
 """
 PYTHON 3.8 (64 BIT)
 
-pip install pip install GDAL-3.3.3-cp38-cp38-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+pip install GDAL-3.3.3-cp38-cp38-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
 pip install rasterio
+pip install pgeocode
 
 Population heatmap:
 https://towardsdatascience.com/creating-beautiful-population-density-maps-with-python-fcdd84035e06
@@ -24,6 +25,10 @@ import pandas as pd
 from matplotlib import cm
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap
 import matplotlib.colors as colors
+
+import pgeocode
+import plotly.express as px
+import pandas as pd
 
 
 def prepare_map_colour_scheme():
@@ -71,6 +76,12 @@ def generate_postcode_mapping():
     list_of_postcodes = list_of_cinemas_df['postcode'].tolist()
 
     # TODO - passing postcodes into map
+    # Issue with urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]
+    # https://stackoverflow.com/questions/59521203/using-pgeocode-lib-of-python-to-find-the-latitude-and-longitude - WIP
+    nomi = pgeocode.Nominatim('GB')
+
+
+
 
 
 if __name__ == '__main__':

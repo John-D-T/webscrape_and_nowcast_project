@@ -59,8 +59,7 @@ def generate_heatmap():
     norm, newcmap = prepare_map_colour_scheme()
 
     # load data containing UK population - obtained from https://hub.worldpop.org/geodata/summary?id=29480
-    tif_file = rasterio.open(os.path.join(os.getcwd(), 'population_cinema_heatmap', 'gbr_ppp_2020_UNadj.tif'))
-
+    tif_file = rasterio.open(os.path.join(os.getcwd(), 'gbr_ppp_2020_UNadj.tif'))
     uk_worldpop_raster_tot = tif_file.read(1)
 
     uk_worldpop_raster_tot[uk_worldpop_raster_tot < 0] = None
@@ -76,19 +75,10 @@ def generate_postcode_mapping():
     # load data containing all cinemas in the UK (google scrape)
     cinema_file = "2023-04-27_cinema_and_post_codes.csv"
     list_of_cinemas_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_maps_scraper', 'output', cinema_file), header=0)
-    list_of_postcodes = list_of_cinemas_df['postcode'].tolist()
-
-    # TODO - convert postcodes into latitude-longitude
-    # TODO - plot latitude-longitude on map
-
-    # SOLN 1
-    # nomi = pgeocode.Nominatim('GB')
-    # Issue with urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]
-    # https://stackoverflow.com/questions/59521203/using-pgeocode-lib-of-python-to-find-the-latitude-and-longitude - WIP
 
     # SOLN 2: https://towardsdatascience.com/geocode-with-python-161ec1e62b89
+    #         https://towardsdatascience.com/geopandas-101-plot-any-data-with-a-latitude-and-longitude-on-a-map-98e01944b972
 
-    # SOLN 3: https://towardsdatascience.com/geopandas-101-plot-any-data-with-a-latitude-and-longitude-on-a-map-98e01944b972
     from geopy.extra.rate_limiter import RateLimiter
 
     locator = Nominatim(user_agent="myGeocoder")
@@ -105,12 +95,16 @@ def generate_postcode_mapping():
     list_of_cinemas_df = list_of_cinemas_df[pd.notnull(list_of_cinemas_df["latitude"])]
 
     # https://realpython.com/python-folium-web-maps-from-data/#:~:text=Python's%20Folium%20library%20gives%20you,can%20share%20as%20a%20website.
-    # TODO - edit this to fit 'location' to the UK
-    map1 = folium.Map(
-        location=[59.338315, 18.089960],
+    map = folium.Map(
+        location=[55.3781, 3.4360],
         tiles='cartodbpositron',
-        zoom_start=12,
+        zoom_start=6
     )
+    # https://snyk.io/advisor/python/folium/functions/folium.CircleMarker
+    list_of_cinemas_df.apply(lambda row: folium.CircleMarker(location=[row["latitude"], row["longitude"]], radius=2, fill=True).add_to(map), axis=1)
+    map.save("cinema_heatmap_zoom.html")
+
+    # TODO - attempt a matplotlib plot - https://github.com/rylativity/identifying_wnv_locations-raw_repo-/blob/master/03-Geo_modeling.ipynb
 
 if __name__ == '__main__':
     #generate_heatmap()

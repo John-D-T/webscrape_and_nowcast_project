@@ -66,12 +66,14 @@ def checking_bfi_box_office_for_seasonality():
 
     decompose_result_mult = seasonal_decompose(df_subset, model="additive")
 
+    observed = decompose_result_mult.observed
     trend = decompose_result_mult.trend
     seasonal = decompose_result_mult.seasonal
     residual = decompose_result_mult.resid
 
-    # TODO - make sense of the plot
     decompose_result_mult.plot()
+
+    # TODO - de-seasoning the data: https://analyticsindiamag.com/comprehensive-guide-to-deseasonalizing-time-series/
 
 def checking_monthly_admissions_for_seasonality():
     # clearing out existing graphs

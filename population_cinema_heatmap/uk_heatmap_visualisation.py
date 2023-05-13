@@ -33,6 +33,9 @@ from geopy.geocoders import Nominatim
 import folium
 from folium.plugins import FastMarkerCluster
 
+import geopandas as gpd
+from shapely.geometry import Point, Polygon
+
 
 def prepare_map_colour_scheme():
     # for get_cmap, see this for colour schemes- https://matplotlib.org/stable/tutorials/colors/colormaps.html
@@ -94,6 +97,8 @@ def generate_postcode_mapping():
     # removing nulls
     list_of_cinemas_df = list_of_cinemas_df[pd.notnull(list_of_cinemas_df["latitude"])]
 
+    list_of_cinemas_plt_df = list_of_cinemas_df
+
     # https://realpython.com/python-folium-web-maps-from-data/#:~:text=Python's%20Folium%20library%20gives%20you,can%20share%20as%20a%20website.
     map = folium.Map(
         location=[55.3781, 3.4360],
@@ -103,8 +108,20 @@ def generate_postcode_mapping():
     # https://snyk.io/advisor/python/folium/functions/folium.CircleMarker
     list_of_cinemas_df.apply(lambda row: folium.CircleMarker(location=[row["latitude"], row["longitude"]], radius=2, fill=True).add_to(map), axis=1)
     map.save("cinema_heatmap_zoom.html")
+    #map.save("cinema_heatmap_zoom.png")
 
     # TODO - attempt a matplotlib plot - https://github.com/rylativity/identifying_wnv_locations-raw_repo-/blob/master/03-Geo_modeling.ipynb
+    geometry = [Point(xy) for xy in zip(list_of_cinemas_plt_df.Longitude, list_of_cinemas_plt_df.Latitude)]
+    list_of_cinemas_plt_df['geometry'] = geometry
+    list_of_cinemas_plt_df.drop(['Latitude', 'Longitude'], axis=1, inplace=True)
+    crs = {'init': 'epsg:4326'}
+    spray_locs = gpd.GeoDataFrame(list_of_cinemas_plt_df, crs=crs, geometry=geometry)
+    city_bound = gpd.read_file(os.path.join(os.getcwd(), "Great_Britain_shapefile", "gb_1km.shp"))
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    spray_locs.geometry.plot(marker='d', color='blue', markersize=1, ax=ax, label='Spray Loc')
+    list_of_cinemas_plt_df.plot(color='grey', ax=ax, alpha=0.4)
+
 
 if __name__ == '__main__':
     #generate_heatmap()

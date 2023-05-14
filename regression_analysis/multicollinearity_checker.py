@@ -29,11 +29,7 @@ def checking_all_independent_variables_for_collinearity(df):
 
     # calculating VIF
     list_of_columns = ['monthly_admissions', 'frequency_academy_awards', 'frequency_cinema_showings', 'frequency_cinemas_near_me',
-         'monthly_gross', 'number_of_cinemas', 'monthly_gross_ratio_rank_1']
-    # list_of_columns = ['monthly_gross','monthly_admissions', 'number_of_cinemas', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_2', 'monthly_gross_ratio_rank_3', 'monthly_gross_ratio_rank_4',
-    #                'monthly_gross_ratio_rank_5', 'monthly_gross_ratio_rank_6', 'monthly_gross_ratio_rank_7', 'monthly_gross_ratio_rank_8', 'monthly_gross_ratio_rank_9', 'monthly_gross_ratio_rank_10',
-    #                'monthly_gross_ratio_rank_11', 'monthly_gross_ratio_rank_12', 'monthly_gross_ratio_rank_13', 'monthly_gross_ratio_rank_14', 'monthly_gross_ratio_rank_15', 'frequency_academy_awards',
-    #                'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films', 'frequency_films_near_me']
+         'monthly_gross', 'number_of_cinemas', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15']
 
     # TODO - figure out additional independent variables I want to add to this checker
     X_variables = df[list_of_columns]
@@ -41,7 +37,7 @@ def checking_all_independent_variables_for_collinearity(df):
     vif_data["feature"] = X_variables.columns
     vif_data["VIF"] = [variance_inflation_factor(X_variables.values, i) for i in range(len(X_variables.columns))]
 
-    list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me', 'monthly_gross_ratio_rank_1']
+    list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15']
 
     X_variables_reduced = df[list_of_columns_reduced]
     vif_data_reduced = pd.DataFrame()
@@ -65,12 +61,12 @@ def checking_all_independent_variables_for_collinearity(df):
         width=500,
         height=200,
     )
-    fig.write_image("vif_df_reduced_3_ind_variables.png", scale=2)
+    fig.write_image("vif_df_reduced_4_ind_variables.png", scale=2)
     fig.show()
 
     # correlation matrix (related to, but different from the VIF values)
     rs = np.random.RandomState(0)
-    df = pd.DataFrame(rs.rand(10, 7), columns=list_of_columns)
+    df = pd.DataFrame(rs.rand(10, 8), columns=list_of_columns)
     corr = df.corr()
     corr.style.background_gradient(cmap='coolwarm')
 

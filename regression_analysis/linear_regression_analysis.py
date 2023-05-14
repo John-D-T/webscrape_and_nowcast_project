@@ -140,7 +140,7 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
-    X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'frequency_cinemas_near_me']]
+    X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
     Y = merged_df['gdp']
 
     # initiating linear regression

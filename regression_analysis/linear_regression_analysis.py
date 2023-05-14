@@ -51,6 +51,38 @@ def univariate_regression_box_office_gdp(gdp_df, box_office_df):
     plt.clf()
     sns.regplot(x="monthly_gross", y="gdp", data=merged_df, order=2)
 
+    # convert date to numerical value
+    import datetime as ddt
+    merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+
+    X = merged_df[['date_grouped', 'monthly_gross']]
+    Y = merged_df['gdp']
+
+    # initiating linear regression
+    reg = LinearRegression()
+    reg.fit(X, Y)
+
+    # statsmodel functionality, with more detail:
+    X = add_constant(X)  # to add constant value in the model
+    model = OLS(Y, X).fit()  # fitting the model
+
+    # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    predictions = model.summary()
+
+    # https://economics.stackexchange.com/questions/11774/outputting-regressions-as-table-in-python-similar-to-outreg-in-stata
+    prediction_latex = predictions.as_latex()
+    beginningtex = """\\documentclass{report}
+    \\usepackage{booktabs}
+    \\begin{document}"""
+    endtex = "\end{document}"
+
+    f = open('univariate_regression_box_office_gdp.tex', 'w+')
+    f.write(beginningtex)
+    f.write(prediction_latex)
+    f.write(endtex)
+    f.close()
+
 def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
 
     # clearing out existing graphs
@@ -64,6 +96,38 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     plt.clf()
     sns.regplot(x="monthly_admissions", y="gdp", data=merged_df, order=2)
 
+    # convert date to numerical value
+    import datetime as ddt
+    merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+
+    X = merged_df[['date_grouped', 'monthly_admissions']]
+    Y = merged_df['gdp']
+
+    # initiating linear regression
+    reg = LinearRegression()
+    reg.fit(X, Y)
+
+    # statsmodel functionality, with more detail:
+    X = add_constant(X)  # to add constant value in the model
+    model = OLS(Y, X).fit()  # fitting the model
+
+    # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    predictions = model.summary()
+
+    # https://economics.stackexchange.com/questions/11774/outputting-regressions-as-table-in-python-similar-to-outreg-in-stata
+    prediction_latex = predictions.as_latex()
+    beginningtex = """\\documentclass{report}
+    \\usepackage{booktabs}
+    \\begin{document}"""
+    endtex = "\end{document}"
+
+    f = open('univariate_regression_monthly_admission_gdp.tex', 'w+')
+    f.write(beginningtex)
+    f.write(prediction_latex)
+    f.write(endtex)
+    f.close()
+
 def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df):
     # clearing out existing graphs
     plt.clf()
@@ -76,33 +140,32 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
-    # TODO - add rest of independent variables
-    X = merged_df[['date_grouped','monthly_gross','monthly_admissions', 'number_of_cinemas', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_2', 'monthly_gross_ratio_rank_3', 'monthly_gross_ratio_rank_4',
-                   'monthly_gross_ratio_rank_5', 'monthly_gross_ratio_rank_6', 'monthly_gross_ratio_rank_7', 'monthly_gross_ratio_rank_8', 'monthly_gross_ratio_rank_9', 'monthly_gross_ratio_rank_10',
-                   'monthly_gross_ratio_rank_11', 'monthly_gross_ratio_rank_12', 'monthly_gross_ratio_rank_13', 'monthly_gross_ratio_rank_14', 'monthly_gross_ratio_rank_15', 'frequency_academy_awards',
-                   'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films', 'frequency_films_near_me']]
+    X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'frequency_cinemas_near_me']]
     Y = merged_df['gdp']
 
     # initiating linear regression
     reg = LinearRegression()
     reg.fit(X, Y)
 
-    Intercept = reg.intercept_
-    Coefficients = reg.coef_
-
-    print(Intercept)  # -2255.443730866293
-    print(Coefficients)  # [ 3.46684283e-03 -3.36704042e-08  2.38061825e-07  2.02875346e-04, -2.06275364e+02 -2.13966644e+02 -1.96083756e+02 -2.02908698e+02, -2.11805028e+02 -2.61624826e+02 -1.93369650e+02 -2.22989899e+02, -1.25068905e+02 -3.61970849e+02 -1.98135846e+02  2.58697635e+00, -3.07260330e+02 -3.03507628e+02 -1.55415957e+02 -1.86969517e-03,  8.01293711e-02  3.56540510e-03 -5.27801170e-02 -7.05375150e-03]
-
-    # TODO - WIP
     # statsmodel functionality, with more detail:
     X = add_constant(X)  # to add constant value in the model
     model = OLS(Y, X).fit()  # fitting the model
+
+    # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     predictions = model.summary()
 
-    # summary of the OLS regression
-    predictions
+    # https://economics.stackexchange.com/questions/11774/outputting-regressions-as-table-in-python-similar-to-outreg-in-stata
+    prediction_latex = predictions.as_latex()
+    beginningtex = """\\documentclass{report}
+    \\usepackage{booktabs}
+    \\begin{document}"""
+    endtex = "\end{document}"
 
-
+    f = open('multivariate_linear_regression.tex', 'w+')
+    f.write(beginningtex)
+    f.write(prediction_latex)
+    f.write(endtex)
+    f.close()
 def create_gdp_df():
     ### creating our gdp df
 
@@ -219,7 +282,6 @@ def create_monthly_admission_df():
 
     return monthly_admission_df
 
-
 def create_google_trends_df():
     '''
     Load all google trend .csv's for key words - from 2004-2023
@@ -244,7 +306,6 @@ def create_google_trends_df():
     google_trends_df['date_grouped'] = pd.to_datetime(google_trends_df['date_grouped']).apply(lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
     return google_trends_df
 
-
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:
     pd.set_option('display.max_colwidth', None)
@@ -262,8 +323,8 @@ if __name__ == '__main__':
     monthly_admission_df = create_monthly_admission_df()  # monthly admissions dataset
 
     # creating regressions
-    #univariate_regression_box_office_gdp(gdp_df, box_office_df)
+    univariate_regression_box_office_gdp(gdp_df, box_office_df)
 
-    #univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
+    univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
     multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df)

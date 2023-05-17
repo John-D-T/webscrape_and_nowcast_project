@@ -3,6 +3,7 @@ pip install textblob
 
 3.7 VENV
 
+https://towardsdatascience.com/sentiment-analysis-with-text-mining-13dd2b33de27
 """
 from textblob import TextBlob
 import pandas as pd

@@ -761,7 +761,7 @@ if __name__ == '__main__':
     dry_run = False
     keyword = "odeon"    # TODO - consider other keywords: odeon, bfi, cinema (too broad?), just watched
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
-    years = [year for year in range(2011, 2023)]
+    years = [year for year in range(2021, 2023)]
     for year in years:
         twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files, dry_run=dry_run)
         if not dry_run:

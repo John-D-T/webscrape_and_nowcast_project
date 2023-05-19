@@ -25,18 +25,17 @@ def get_average_imdb_ratings_all_movies():
     imdb_df['year_adjusted'] = pd.to_numeric(imdb_df['year'], errors='coerce').fillna(0)
     pd.to_numeric(imdb_df['year_adjusted'])
 
-    #imdb_df = imdb_df[imdb_df['gross(in $)'] > 50000000]
-    p = sns.regplot(x="rating", y="gross(in $)", data=imdb_df, scatter_kws={"color": "black"}, line_kws={"color": "blue"}, ci=95)
-
-    #.set(title='Imdb Rating vs Total Gross (in 10s of millions)')
+    p = sns.regplot(x="rating", y="gross(in $)", data=imdb_df, line_kws={"color": "blue"})
 
     slope, intercept, r, p, sterr = stats.linregress(x=p.get_lines()[0].get_xdata(), y=p.get_lines()[0].get_ydata())
 
-    plt.text(8, 95, 'y = ' + str(round(intercept, 3)) + ' + ' + str(round(slope, 3)) + 'x')
-
+    plt.text(0.5, 800000000, 'y = ' + str(round(intercept, 3)) + ' + ' + str(round(slope, 3)) + 'x', bbox = dict(facecolor = 'blue', alpha = 0.5))
+    plt.xlabel("IMDB rating")
+    plt.ylabel("Total Gross (in 10s of millions of USD)")
+    plt.title("IMDB Rating vs Total Gross (in 10s of millions of USD)")
+    plt.ylim(0, 1000000000)
     plt.clf()
-    sns.regplot(x="rating", y="gross(in $)", data=imdb_df, order=2)
-    'gross(in $)'
+
 
 
 if __name__ == '__main__':

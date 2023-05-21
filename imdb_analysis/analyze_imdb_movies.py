@@ -9,8 +9,7 @@ def get_average_imdb_ratings_25k_movies():
 
     imdb_df['User Rating'] = imdb_df['User Rating'].replace({'K': '000', 'M': '000000'}, regex=True).map(pd.eval).astype(int)
     pd.to_numeric(imdb_df['User Rating'])
-    imdb_df = imdb_df[imdb_df['User Rating'] > 5000]
-
+    imdb_df = imdb_df[imdb_df['user_rating_adjusted'] > 5000]
     imdb_df['user_rating_adjusted'] = pd.to_numeric(imdb_df['User Rating'], errors='coerce').fillna(0)
 
     imdb_df['rating_adjusted'] = pd.to_numeric(imdb_df['Rating'], errors='coerce').fillna(0)
@@ -33,7 +32,9 @@ def get_average_imdb_ratings_all_movies():
     imdb_df = imdb_df[imdb_df['votes'].notna()]
     imdb_df['votes'] = imdb_df['votes'].replace({'K': '000', 'M': '000000'}, regex=True).map(pd.eval).astype(int)
     imdb_df['user_rating_adjusted'] = pd.to_numeric(imdb_df['votes'], errors='coerce').fillna(0)
-    imdb_df = imdb_df[imdb_df['user_rating_adjusted'] > 5000]
+    # imdb_df = imdb_df[imdb_df['user_rating_adjusted'] > 5000]
+
+    imdb_df = imdb_df[imdb_df['gross(in $)'] > 1000000]
 
     imdb_df['rating_adjusted'] = pd.to_numeric(imdb_df['rating'], errors='coerce').fillna(0)
     pd.to_numeric(imdb_df['rating_adjusted'])
@@ -46,7 +47,7 @@ def get_average_imdb_ratings_all_movies():
     # https://stackoverflow.com/questions/44522741/pandas-mean-typeerror-could-not-convert-to-numeric
     imdb_df_grouped = imdb_df.groupby('year_adjusted')['rating_adjusted'].mean().reset_index()
 
-    save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k')
+    save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k_v3')
 
 def save_df_as_image(df, file_name):
     import subprocess
@@ -80,5 +81,5 @@ def concatenate_imdb_movies():
     combined_csv.to_csv("all_movies.csv", index=False, encoding='utf-8-sig')
 
 if __name__ == '__main__':
-    get_average_imdb_ratings_25k_movies()
+    #get_average_imdb_ratings_25k_movies()
     get_average_imdb_ratings_all_movies()

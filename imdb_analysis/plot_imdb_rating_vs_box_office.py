@@ -29,10 +29,10 @@ def get_average_imdb_ratings_all_movies():
 
     slope, intercept, r, p, sterr = stats.linregress(x=p.get_lines()[0].get_xdata(), y=p.get_lines()[0].get_ydata())
 
-    plt.text(0.5, 800000000, 'y = ' + str(round(intercept, 3)) + ' + ' + str(round(slope, 3)) + 'x', bbox = dict(facecolor = 'blue', alpha = 0.5))
+    plt.text(2, 600000000, 'y = ' + str(round(intercept, 3)) + ' + ' + str(round(slope, 3)) + 'x', bbox = dict(facecolor = 'blue', alpha = 0.5))
     plt.xlabel("IMDB rating")
-    plt.ylabel("Total Gross (in 10s of millions of USD)")
-    plt.title("IMDB Rating vs Total Gross (in 10s of millions of USD)")
+    plt.ylabel("Total Gross (in billions of USD)")
+    plt.title("IMDB Rating vs Total Gross (in billions of USD)")
     plt.ylim(0, 1000000000)
     plt.clf()
 

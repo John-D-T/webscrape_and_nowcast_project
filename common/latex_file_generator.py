@@ -21,7 +21,7 @@ def save_df_as_image(df, file_name):
     subprocess.call(['convert', '-density', '300', pdffile, '-quality', '90', outname])
 
 
-def save_model_as_image(model, file_name):
+def save_model_as_image(model, file_name, lin_reg=False):
     # https://economics.stackexchange.com/questions/11774/outputting-regressions-as-table-in-python-similar-to-outreg-in-stata
     filename = '%s.tex' % file_name
     pdffile = '%s.pdf' % file_name
@@ -40,7 +40,10 @@ def save_model_as_image(model, file_name):
 
     with open(filename, 'w+') as f:
         f.write(beginningtex)
-        f.write(model.summary().as_latex())
+        if lin_reg:
+            f.write(model.summary.as_latex())
+        else:
+            f.write(model.summary().as_latex())
         f.write(endtex)
 
     subprocess.call(['pdflatex', filename])

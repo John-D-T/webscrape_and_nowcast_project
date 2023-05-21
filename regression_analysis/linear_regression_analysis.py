@@ -14,8 +14,8 @@ from regression_analysis.machine_learning_code import nowcast_regression
 from common.latex_file_generator import save_model_as_image
 from common import constants as c
 
-# potentially useful imports later:
-# import scipy
+from linearmodels import IV2SLS
+
 
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
@@ -24,6 +24,7 @@ pip install seaborn
 pip install scipy 
 pip install sklearn
 pip install statsmodel
+pip install linearmodels
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e
@@ -121,19 +122,49 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
-    X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
+    #X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
+    X = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
+                   'frequency_cinemas_near_me']]
+    X_Z = merged_df['monthly_gross']
     Y = merged_df['gdp']
+    Z = merged_df['frequency_academy_awards']
 
     # initiating linear regression
     reg = LinearRegression()
     reg.fit(X, Y)
 
-    # statsmodel functionality, with more detail:
-    X = add_constant(X)  # to add constant value in the model
-    model = OLS(Y, X).fit()  # fitting the model
+    X = add_constant(X)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
+    # OLS regression
+
+    # ols_model = OLS(Y, X).fit()  # fitting the model
+    #
+    # # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression')
+
+    # Has robust covariance
+    ols_model_2 = IV2SLS(dependent=Y, exog=X, endog=None, instruments=None).fit()
+
+    # TODO - fix the alignment of the text
     # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=model, file_name='multivariate_linear_regression')
+    save_model_as_image(model=ols_model_2, file_name='multivariate_ols_regression_v2', lin_reg=True)
+
+    # # 2SLS regression
+    # iv2sls_model = IV2SLS(Y, X, Z)
+    # iv2sls_results = iv2sls_model.fit()
+    #
+    # # Print the 2SLS results
+    # print(iv2sls_results.summary())
+    #
+    # save_model_as_image(model=iv2sls_results, file_name='multivariate_2sls_regression')
+
+
+    # TODO - filter on covid years
+    resultIV = IV2SLS(dependent=Y, exog=X, endog=X_Z, instruments=Z).fit()
+
+    resultIV.summary
+
+    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
 
     nowcast_regression(X, Y)
 

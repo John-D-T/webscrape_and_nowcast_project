@@ -9,6 +9,7 @@ from linearmodels import IV2SLS
 from sklearn.linear_model import LinearRegression
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
+from statsmodels.graphics.tsaplots import plot_acf
 
 from common import constants as c
 from common.latex_file_generator import save_model_as_image
@@ -128,6 +129,10 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
+    # Add lags for the dependent variable
+    merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
+    merged_df['gdp_lag2'] = merged_df['gdp'].shift(2)
+
     #X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
     X = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
                    'frequency_cinemas_near_me']]
@@ -141,23 +146,31 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
     X = add_constant(X)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
-    # OLS regression usings statsmodel
-
-    # ols_model = OLS(Y, X).fit()  # fitting the model
-    #
-    # # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression')
-
-    # OLS Regresison - Has robust covariance
-    ols_model_2 = IV2SLS(dependent=Y, exog=X, endog=None, instruments=None).fit()
-
+    # OLS Regression using linearmodels - Has robust covariance
+    ols_model = IV2SLS(dependent=Y, exog=X, endog=None, instruments=None).fit()
 
     # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model_2, file_name='multivariate_ols_regression', lin_reg=True)
+    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
 
     resultIV = IV2SLS(dependent=Y, exog=X, endog=X_Z, instruments=Z).fit()
 
-    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+    # TODO - fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
+    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+
+    # Calculate the residuals
+    merged_df['residuals'] = ols_model.resids
+
+    # # Plot the residuals
+    # plt.scatter(merged_df['x'], merged_df['residuals'])
+    # plt.axhline(0, color='red', linestyle='--')
+    # plt.xlabel('x')
+    # plt.ylabel('Residuals')
+    # plt.show()
+
+    # WIP - Check for serial correlation using the autocorrelation function (ACF)
+    plot_acf(merged_df['residuals'])
+    plt.show()
+
 
     nowcast_regression(X, Y)
 

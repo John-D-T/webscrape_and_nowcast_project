@@ -1,0 +1,8 @@
+csv_extension = '.csv'
+academy_awards = 'academy_awards'
+cinema_showings = 'cinema_showings'
+cinemas_near_me = 'cinemas_near_me'
+films = 'films'
+films_near_me = 'films_near_me'
+gdp_file = 'monthly_gdp_uk_v2_cleaned.csv'
+box_office_file = 'compiled_top_15_box_office.csv'

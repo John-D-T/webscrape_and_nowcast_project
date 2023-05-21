@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import glob
 
+from common.latex_file_generator import save_df_as_image
+
 def get_average_imdb_ratings_25k_movies():
     pd.set_option('display.max_rows', 500)
 
@@ -48,26 +50,6 @@ def get_average_imdb_ratings_all_movies():
     imdb_df_grouped = imdb_df.groupby('year_adjusted')['rating_adjusted'].mean().reset_index()
 
     save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k_v3')
-
-def save_df_as_image(df, file_name):
-    import subprocess
-
-    filename = '%s.tex' % file_name
-    pdffile = '%s.pdf' % file_name
-    outname = '%s.png' % file_name
-
-    template = r'''\documentclass[preview]{{standalone}}
-    \usepackage{{booktabs}}
-    \begin{{document}}
-    {}
-    \end{{document}}
-    '''
-
-    with open(filename, 'w+') as f:
-        f.write(template.format(df.to_latex()))
-
-    subprocess.call(['pdflatex', filename])
-    subprocess.call(['convert', '-density', '300', pdffile, '-quality', '90', outname])
 
 def concatenate_imdb_movies():
     extension = 'csv'

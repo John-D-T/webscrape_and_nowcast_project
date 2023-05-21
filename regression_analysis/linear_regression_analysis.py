@@ -1,21 +1,19 @@
-import pandas as pd
-import numpy as np
+import datetime as ddt
 import os
 
-import seaborn as sns
-from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-
-from statsmodels.tools.tools import add_constant
-from statsmodels.regression.linear_model import OLS
-
-from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
-from regression_analysis.machine_learning_code import nowcast_regression
-from common.latex_file_generator import save_model_as_image
-from common import constants as c
-
+import numpy as np
+import pandas as pd
+import seaborn as sns
 from linearmodels import IV2SLS
+from sklearn.linear_model import LinearRegression
+from statsmodels.regression.linear_model import OLS
+from statsmodels.tools.tools import add_constant
 
+from common import constants as c
+from common.latex_file_generator import save_model_as_image
+from regression_analysis.machine_learning_code import nowcast_regression
+from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
 
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
@@ -110,16 +108,24 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.write(endtex)
     f.close()
 
-def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df):
+def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, covid_check=False):
     # clearing out existing graphs
     plt.clf()
 
-    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
+    full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
+    merged_df = pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped'])
 
-    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
-    # convert date to numerical value
-    import datetime as ddt
+    # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+
+    if covid_check:
+        # Set the cutoff date, based on when covid started in the UK
+        cutoff_date = pd.to_datetime('2020-02-01')
+
+        # Filter the DataFrame
+        merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
+
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     #X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
@@ -135,34 +141,21 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
     X = add_constant(X)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
-    # OLS regression
+    # OLS regression usings statsmodel
 
     # ols_model = OLS(Y, X).fit()  # fitting the model
     #
     # # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression')
 
-    # Has robust covariance
+    # OLS Regresison - Has robust covariance
     ols_model_2 = IV2SLS(dependent=Y, exog=X, endog=None, instruments=None).fit()
 
-    # TODO - fix the alignment of the text
+
     # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model_2, file_name='multivariate_ols_regression_v2', lin_reg=True)
+    save_model_as_image(model=ols_model_2, file_name='multivariate_ols_regression', lin_reg=True)
 
-    # # 2SLS regression
-    # iv2sls_model = IV2SLS(Y, X, Z)
-    # iv2sls_results = iv2sls_model.fit()
-    #
-    # # Print the 2SLS results
-    # print(iv2sls_results.summary())
-    #
-    # save_model_as_image(model=iv2sls_results, file_name='multivariate_2sls_regression')
-
-
-    # TODO - filter on covid years
     resultIV = IV2SLS(dependent=Y, exog=X, endog=X_Z, instruments=Z).fit()
-
-    resultIV.summary
 
     save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
 
@@ -360,4 +353,4 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df)
+    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=True)

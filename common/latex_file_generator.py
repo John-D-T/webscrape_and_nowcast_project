@@ -35,8 +35,14 @@ def save_model_as_image(model, file_name, lin_reg=False):
     # '''
     beginningtex = """\\documentclass{report}
     \\usepackage{booktabs}
-    \\begin{document}"""
-    endtex = "\end{document}"
+    \\usepackage{longtable}
+    \\usepackage{booktabs}
+    \\usepackage{makecell}
+    \\usepackage[landscape,hmargin=0.5cm]{geometry}
+    \\begin{document}
+    \\begin{flushleft}"""
+    endtex = """\\end{flushleft}
+    \\end{document}"""
 
     with open(filename, 'w+') as f:
         f.write(beginningtex)

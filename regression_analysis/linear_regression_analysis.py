@@ -113,12 +113,16 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     # clearing out existing graphs
     plt.clf()
 
-    full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
+    # full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
+
     merged_df = pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped'])
 
     # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+
+    # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
+    merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
 
     if covid_check:
         # Set the cutoff date, based on when covid started in the UK
@@ -131,34 +135,41 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
     # Add lags for the dependent variable
     merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
-    merged_df['gdp_lag2'] = merged_df['gdp'].shift(2)
 
-    #X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
-    X = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me']]
-    X_Z = merged_df['monthly_gross']
+    # have to filter out null values in gdp_lag1 - losing dimensionality?
+    merged_df = merged_df.dropna(subset=["gdp_lag1"])
+
+    # X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
+    X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
+                   'frequency_cinemas_near_me', 'gdp_lag1']]
+    X_Z_2SLS = merged_df['monthly gross']
+    X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross']]
     Y = merged_df['gdp']
-    Z = merged_df['frequency_academy_awards']
+    Z = merged_df['frequency academy awards']
 
     # initiating linear regression
-    reg = LinearRegression()
-    reg.fit(X, Y)
+    # reg = LinearRegression()
+    # reg.fit(X_OLS, Y)
 
-    X = add_constant(X)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    X = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
-    # OLS Regression using linearmodels - Has robust covariance
-    ols_model = IV2SLS(dependent=Y, exog=X, endog=None, instruments=None).fit()
-
-    # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
-
-    resultIV = IV2SLS(dependent=Y, exog=X, endog=X_Z, instruments=Z).fit()
-
-    # TODO - fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
+    # # OLS Regression using linearmodels - Has robust covariance
+    # ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
+    #
+    # # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
+    #
+    # resultIV = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
+    #
     # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+    #
+    # resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
+    #
+    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression_v2', lin_reg=True)
 
-    # Calculate the residuals
-    merged_df['residuals'] = ols_model.resids
+    # # TODO - Calculate the residuals
+    # merged_df['residuals'] = ols_model.resids
 
     # # Plot the residuals
     # plt.scatter(merged_df['x'], merged_df['residuals'])
@@ -167,12 +178,12 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     # plt.ylabel('Residuals')
     # plt.show()
 
-    # WIP - Check for serial correlation using the autocorrelation function (ACF)
-    plot_acf(merged_df['residuals'])
-    plt.show()
+    # # WIP - Check for serial correlation using the autocorrelation function (ACF)
+    # plot_acf(merged_df['residuals'])
+    # plt.show()
 
 
-    nowcast_regression(X, Y)
+    nowcast_regression(X_OLS, Y)
 
 
 class GeneratingDataSourceDataframes():
@@ -202,8 +213,6 @@ class GeneratingDataSourceDataframes():
         box_office_df = pd.read_csv(
             os.path.join(os.path.dirname(os.getcwd()), 'bfi_data_compile', 'output', c.box_office_file))
 
-        weekend_gross_column = 'Weekend Gross'
-        box_office_date_column = 'date'
         no_of_cinemas = 'Number of cinemas'
         distributor = 'Distributor'
         title = 'Title'
@@ -211,7 +220,6 @@ class GeneratingDataSourceDataframes():
 
         box_office_refine_df = box_office_df.drop(columns=[title, distributor, no_of_cinemas, site_average],
                                                   axis='columns')
-        # box_office_refine_df = box_office_df[[weekend_gross_column, box_office_date_column]]
 
         box_office_refine_df = box_office_refine_df.rename(columns={'Weekend Gross': 'weekend_gross'})
 

@@ -11,8 +11,6 @@ def nowcast_regression(X, Y):
     Function to nowcast, using machine learning techniques
     """
 
-    # x = df['']
-    # y = df['']
     x = X.to_numpy()
     y = Y.to_numpy()
 
@@ -30,4 +28,4 @@ def nowcast_regression(X, Y):
     train_score = model.score(x_train, y_train)
     test_score = model.score(x_test, y_test)
 
-    # TODO - consider other techniques to improve the model score
+    # TODO - figure out a way to plot test and training score

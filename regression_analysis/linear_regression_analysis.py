@@ -6,10 +6,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from linearmodels import IV2SLS
+import scipy.stats as scs
 from sklearn.linear_model import LinearRegression
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
-from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.stats.stattools import durbin_watson
+import statsmodels.stats.api as sms
+import statsmodels.api as sm
 
 from common import constants as c
 from common.latex_file_generator import save_model_as_image
@@ -110,6 +113,10 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.close()
 
 def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, covid_check=False):
+    '''
+    Preparing regression input
+    '''
+
     # clearing out existing graphs
     plt.clf()
 
@@ -139,7 +146,6 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
-    # X = merged_df[['date_grouped','monthly_gross','monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15', 'frequency_cinemas_near_me']]
     X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
                    'frequency_cinemas_near_me', 'gdp_lag1']]
     X_Z_2SLS = merged_df['monthly gross']
@@ -152,38 +158,77 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     # reg = LinearRegression()
     # reg.fit(X_OLS, Y)
 
-    X = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
-    # # OLS Regression using linearmodels - Has robust covariance
-    # ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
-    #
-    # # summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
-    #
-    # resultIV = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
-    #
-    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
-    #
-    # resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
-    #
-    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression_v2', lin_reg=True)
+    '''
+    Now plotting regression
+    '''
 
-    # # TODO - Calculate the residuals
-    # merged_df['residuals'] = ols_model.resids
+    # OLS Regression using linearmodels - Has robust covariance
+    ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
 
-    # # Plot the residuals
-    # plt.scatter(merged_df['x'], merged_df['residuals'])
-    # plt.axhline(0, color='red', linestyle='--')
-    # plt.xlabel('x')
-    # plt.ylabel('Residuals')
-    # plt.show()
+    # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
 
-    # # WIP - Check for serial correlation using the autocorrelation function (ACF)
-    # plot_acf(merged_df['residuals'])
-    # plt.show()
+    resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
 
+    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+
+    '''
+    Now checking residuals
+    '''
+
+
+
+    # QQ Plot - https://towardsdatascience.com/q-q-plots-explained-5aa8495426c0
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    scs.probplot(ols_model.resids, dist='norm', plot=plt)
+
+    ax.get_lines()[0].set_markerfacecolor('black')
+    ax.get_lines()[0].set_markeredgecolor('black')
+    ax.get_lines()[1].set_color('black')
+    plt.title('QQ Plot')
+    plt.show()
+
+    plt.clf()
+
+    # Plot outliers and check if any residuals are above 4 or < -4
+    merged_df['residuals'] = ols_model.resids
+    max_residual = merged_df['residuals'].max()
+    min_residual = merged_df['residuals'].min()
+
+    # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
+    dw_test = durbin_watson(ols_model.resids) # 2.030877
+
+    # Homocedasticity test
+        # Ho = Homocedasticity = P > 0.05
+        # Ha = There's no homocedasticity = p <=0.05
+
+    model = sm.OLS(Y, X_OLS).fit()
+
+    stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
+
+    print(f'Test stat: {stat}') # 10.959761738829663
+    print(f'p-Value: {p}') # 0.05218365231539978
+    print(f'F-Value: {f}') # 2.2695840450750473
+    print(f'f_p_value: {fp}') # 0.05063914958172162
+
+    plt.scatter(y=model.resid, x=model.predict(), color='black', alpha=0.5, s=20)
+    plt.hlines(y=0, xmin=0, xmax=4, color='orange')
+    plt.xlim(80,100)
+    plt.xlabel('Predicted values')
+    plt.ylabel('Residuals')
+    plt.show()
+
+    '''
+    Nowcasting model
+    '''
 
     nowcast_regression(X_OLS, Y)
+
+    # TODO - add a nowcast including covid
 
 
 class GeneratingDataSourceDataframes():

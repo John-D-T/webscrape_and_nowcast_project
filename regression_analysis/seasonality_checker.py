@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot
 import os
-from regression_analysis.linear_regression_analysis import create_box_office_df
+from regression_analysis.linear_regression_analysis import GeneratingDataSourceDataframes
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 
@@ -36,6 +36,10 @@ def checking_google_trends_for_seasonality():
 
 
 def checking_bfi_box_office_for_seasonality():
+    """
+    Check for seasonality. We remove seasonality by adding the variable as a control.
+    :return:
+    """
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 150)
@@ -43,7 +47,9 @@ def checking_bfi_box_office_for_seasonality():
     # clearing out existing graphs
     pyplot.clf()
 
-    df = create_box_office_df()
+    gen = GeneratingDataSourceDataframes()
+
+    df = gen.create_box_office_df()
 
     # converting date to a yyyy_mm_dd_format in order to fit the 'MS' frequency for the modelling later
     df['date_yyyy_mm_dd'] = pd.to_datetime(['{}-01'.format(y_m) for y_m in df.date_grouped])
@@ -72,8 +78,6 @@ def checking_bfi_box_office_for_seasonality():
     residual = decompose_result_mult.resid
 
     decompose_result_mult.plot()
-
-    # TODO - de-seasoning the data: https://analyticsindiamag.com/comprehensive-guide-to-deseasonalizing-time-series/
 
 def checking_monthly_admissions_for_seasonality():
     # clearing out existing graphs

@@ -37,6 +37,5 @@ def get_average_imdb_ratings_all_movies():
     plt.clf()
 
 
-
 if __name__ == '__main__':
     get_average_imdb_ratings_all_movies()

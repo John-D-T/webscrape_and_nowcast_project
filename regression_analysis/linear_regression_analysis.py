@@ -18,6 +18,7 @@ from common import constants as c
 from common.latex_file_generator import save_model_as_image
 from regression_analysis.machine_learning_code import nowcast_regression
 from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
+from twitter_scraper.sentiment_analysis_on_tweets import sentiment_analysis
 
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
@@ -232,6 +233,25 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
 
 class GeneratingDataSourceDataframes():
+    def create_twitter_scrape_df(self):
+        ### creating our twitter df
+        column_name = 'tweet'
+        twitter_scrape_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'twitter_scraper', c.twitter_odeon_file))
+
+        twitter_scrape_df = sentiment_analysis(twitter_scrape_df, column_name)
+        # filter on twitter df for 1. Time period we want and 2. Columns we want
+        date_column = 'date'
+        sentiment = 'sentiment'
+        twitter_sentiment_df = twitter_scrape_df[[date_column, sentiment]]
+        twitter_sentiment_df['date'] = pd.to_datetime(twitter_sentiment_df['date'], format='%Y-%m-%d')
+
+        # Group by month?
+        grouped_df = twitter_sentiment_df.groupby(pd.Grouper(key='date', freq='M')).agg({'sentiment': pd.Series.mode})
+
+        # TODO - check for nulls
+
+        # TODO - return df, to later pass into linear regression
+
     def create_gdp_df(self):
         ### creating our gdp df
 
@@ -404,19 +424,21 @@ if __name__ == '__main__':
     # collecting independent variables
     df_generator = GeneratingDataSourceDataframes()
 
-    google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
+    twitter_scrape_df = df_generator.create_twitter_scrape_df()
 
-    gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
-
-    box_office_df = df_generator.create_box_office_df()  # bfi box office dataset
-
-    box_office_weightings_df = df_generator.create_box_office_weightings_df()  # bfi box office dataset, with weightings
-
-    monthly_admission_df = df_generator.create_monthly_admission_df()  # monthly admissions dataset
-
-    # creating regressions
-    univariate_regression_box_office_gdp(gdp_df, box_office_df)
-
-    univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
-
-    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)
+    # google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
+    #
+    # gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
+    #
+    # box_office_df = df_generator.create_box_office_df()  # bfi box office dataset
+    #
+    # box_office_weightings_df = df_generator.create_box_office_weightings_df()  # bfi box office dataset, with weightings
+    #
+    # monthly_admission_df = df_generator.create_monthly_admission_df()  # monthly admissions dataset
+    #
+    # # creating regressions
+    # univariate_regression_box_office_gdp(gdp_df, box_office_df)
+    #
+    # univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
+    #
+    # multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)

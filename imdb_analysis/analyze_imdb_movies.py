@@ -51,7 +51,7 @@ def get_average_imdb_ratings_all_movies():
     # https://stackoverflow.com/questions/44522741/pandas-mean-typeerror-could-not-convert-to-numeric
     imdb_df_grouped = imdb_df.groupby('year_adjusted')['rating_adjusted'].mean().reset_index()
 
-    save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k_v3')
+    save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k')
 
     return imdb_df
 

@@ -426,19 +426,21 @@ if __name__ == '__main__':
 
     twitter_scrape_df = df_generator.create_twitter_scrape_df()
 
-    # google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
-    #
-    # gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
-    #
-    # box_office_df = df_generator.create_box_office_df()  # bfi box office dataset
-    #
-    # box_office_weightings_df = df_generator.create_box_office_weightings_df()  # bfi box office dataset, with weightings
-    #
-    # monthly_admission_df = df_generator.create_monthly_admission_df()  # monthly admissions dataset
-    #
-    # # creating regressions
-    # univariate_regression_box_office_gdp(gdp_df, box_office_df)
-    #
-    # univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
-    #
-    # multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)
+    #weather_df = df_generator.
+
+    google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
+
+    gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
+
+    box_office_df = df_generator.create_box_office_df()  # bfi box office dataset
+
+    box_office_weightings_df = df_generator.create_box_office_weightings_df()  # bfi box office dataset, with weightings
+
+    monthly_admission_df = df_generator.create_monthly_admission_df()  # monthly admissions dataset
+
+    # creating regressions
+    univariate_regression_box_office_gdp(gdp_df, box_office_df)
+
+    univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
+
+    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)

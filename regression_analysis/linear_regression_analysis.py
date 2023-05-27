@@ -113,7 +113,7 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.write(endtex)
     f.close()
 
-def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, covid_check=False):
+def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, covid_check=False):
     '''
     Preparing regression input
     '''
@@ -121,9 +121,9 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     # clearing out existing graphs
     plt.clf()
 
-    # full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped'])
+    # full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
-    merged_df = pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped'])
+    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
     # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
@@ -148,10 +148,10 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
     X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'average_temperature']]
     X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 
@@ -233,6 +233,28 @@ def multivariate_linear_regression(gdp_df, box_office_df, monthly_admissions_df,
 
 
 class GeneratingDataSourceDataframes():
+
+    def generate_weather_df(self):
+        ### creating our weather_analysis df
+
+        weather_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'weather_analysis', c.weather_file))
+
+        weather_df = weather_df.drop(columns=[' win', ' spr', ' sum', ' aut', ' ann'], axis=1)
+
+        # Transpose columns
+        weather_df_transpose = weather_df.set_index('year').stack().reset_index()
+
+        # rename df column
+        weather_df_transpose = weather_df_transpose.rename(columns={"level_1": "month", 0: "average_temperature"})
+
+        # generate date column from year and month column
+        weather_df_transpose['date_grouped'] = weather_df_transpose['year'].astype(str) + '-' + weather_df_transpose['month'].astype(str)
+
+        weather_df_transpose = weather_df_transpose.drop(columns=['year', 'month'])
+
+        return weather_df_transpose
+
+
     def create_twitter_scrape_df(self):
         ### creating our twitter df
         column_name = 'tweet'
@@ -424,10 +446,10 @@ if __name__ == '__main__':
     # collecting independent variables
     df_generator = GeneratingDataSourceDataframes()
 
-    twitter_scrape_df = df_generator.create_twitter_scrape_df()
+    weather_df = df_generator.generate_weather_df()
 
-    #weather_df = df_generator.
-
+    # twitter_scrape_df = df_generator.create_twitter_scrape_df()
+    #
     google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
 
     gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
@@ -443,4 +465,4 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression(gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)
+    multivariate_linear_regression(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)

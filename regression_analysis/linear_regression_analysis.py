@@ -132,6 +132,15 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
     merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
 
+    # Add dummy variable for covid lockdown
+    # TODO - do I need to add empty rows for some of these dates?
+    list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
+                      pd.to_datetime('2020-06-01'), pd.to_datetime('2020-07-01'), pd.to_datetime('2020-09-01'),
+                      pd.to_datetime('2020-10-01'), pd.to_datetime('2020-11-01'), pd.to_datetime('2020-12-01'),
+                      pd.to_datetime('2021-01-01'), pd.to_datetime('2021-02-01'), pd.to_datetime('2021-03-01'),
+                      pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
+    merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
+
     if covid_check:
         # Set the cutoff date, based on when covid started in the UK
         cutoff_date = pd.to_datetime('2020-02-01')
@@ -151,7 +160,7 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
                    'frequency_cinemas_near_me', 'gdp_lag1', 'average_temperature']]
     X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature', '']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 

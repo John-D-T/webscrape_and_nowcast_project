@@ -157,10 +157,10 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
     X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'average_temperature']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'average_temperature', 'cinema_lockdown']]
     X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature', '']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature', 'cinema_lockdown']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 

@@ -1,5 +1,6 @@
 """
 pip install textblob
+pip install vaderSentiment
 
 3.7 VENV
 
@@ -9,18 +10,21 @@ from textblob import TextBlob
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import re
+import string
 
 def sentiment_analysis(df, column_name):
-    df['polarity'] = df[column_name].apply(lambda x: TextBlob(x).sentiment.polarity)
-    df['subjectivity'] = df[column_name].apply(lambda x: TextBlob(x).sentiment.subjectivity)
-    df['sentiment'] = df['polarity'].apply(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'neutral')
+    analyzer = SentimentIntensityAnalyzer()
+    df['sentiment'] = df[column_name].apply(lambda x: analyzer.polarity_scores(x)['compound'])
+    # df['polarity'] = df[column_name].apply(lambda x: TextBlob(x).sentiment.polarity)
+    # df['subjectivity'] = df[column_name].apply(lambda x: TextBlob(x).sentiment.subjectivity)
+    # df['sentiment'] = df['polarity'].apply(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'neutral')
     return df
 
 def plot_sentiment_analysis(df):
     df['date'] = pd.to_datetime(df['date'])
-    df = df.groupby(['date', 'sentiment']).size().reset_index(name='counts')
-    df_pivot = df.pivot(index='date', columns='sentiment', values='counts')
-    df_pivot.plot(kind='line')
+    df.plot(x='date', y='sentiment')
     plt.show()
 
 

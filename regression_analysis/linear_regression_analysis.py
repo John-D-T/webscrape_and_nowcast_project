@@ -125,7 +125,7 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
-    # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
@@ -133,7 +133,6 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
 
     # Add dummy variable for covid lockdown
-    # TODO - do I need to add empty rows for some of these dates?
     list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
                       pd.to_datetime('2020-06-01'), pd.to_datetime('2020-07-01'), pd.to_datetime('2020-09-01'),
                       pd.to_datetime('2020-10-01'), pd.to_datetime('2020-11-01'), pd.to_datetime('2020-12-01'),
@@ -156,11 +155,12 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
-    X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'average_temperature', 'cinema_lockdown']]
+    # TODO - try removing rank 15 and 'average_temperature'
+    X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'cinema_lockdown',
+                   'frequency_cinemas_near_me', 'gdp_lag1']]
     X_Z_2SLS = merged_df['monthly gross']
-    X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'average_temperature', 'cinema_lockdown']]
+    X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'cinema_lockdown',
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 
@@ -352,6 +352,41 @@ class GeneratingDataSourceDataframes():
         # read https://stackoverflow.com/questions/52899858/collapsing-rows-with-nan-entries-in-pandas-dataframe
         box_office_final_df = box_office_refine_df_by_month.groupby('date_grouped', as_index=False).first()
 
+        # Add rows for missing months
+        missing_box_office_df = pd.DataFrame({'date_grouped': ['2021-1', '2021-2', '2021-3', '2021-4', '2020-4', '2020-5', '2020-6'],
+                                              'monthly_gross_ratio_rank_1': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_2': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_3': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_4': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_5': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_6': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_7': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_8': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_9': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_10': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_11': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_12': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_13': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_14': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067],
+                                              'monthly_gross_ratio_rank_15': [0.067, 0.067, 0.067, 0.067, 0.067, 0.067,
+                                                                             0.067]})
+
+        box_office_final_df = box_office_final_df.append(missing_box_office_df, ignore_index=True).sort_values(by=['date_grouped'])
+
         return box_office_final_df
 
     def create_box_office_df(self):
@@ -382,7 +417,6 @@ class GeneratingDataSourceDataframes():
         box_office_grouped_df = box_office_grouped_df.reset_index()
 
         box_office_grouped_df = box_office_grouped_df.rename(columns={'weekend_gross': 'monthly_gross'})
-
         '''
         to make sure that box_office_grouped_df aggregates as expected, we check 
         1. box_office_refine_df['date_grouped'] = box_office_refine_df['date_grouped'].astype("string")
@@ -393,6 +427,14 @@ class GeneratingDataSourceDataframes():
         2. box_office_grouped_df[box_office_grouped_df_2.date_grouped == '2007-10']
         -- 35,475,564 & 15923
         '''
+
+        # Add rows for missing months
+        missing_box_office_df = pd.DataFrame({'date_grouped': ['2021-1', '2021-2', '2021-3', '2021-4', '2020-4', '2020-5', '2020-6'],
+                            'monthly_gross': [0, 0, 0, 0, 0, 0, 0],
+                            'number_of_cinemas': [0, 0, 0, 0, 0, 0, 0]})
+
+        box_office_grouped_df = box_office_grouped_df.append(missing_box_office_df, ignore_index=True).sort_values(by=['date_grouped'])
+
         return box_office_grouped_df
 
     def create_monthly_admission_df(self):

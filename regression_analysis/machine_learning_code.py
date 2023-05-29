@@ -27,19 +27,3 @@ def nowcast_regression(X, Y):
 
     train_score = model_train.score(x_train, y_train) # 0.9761547122561756
     test_score = model_train.score(x_test, y_test) # 0.9802132788375839
-
-    # TODO - get this working, or abandon since we can't plot a multivariate
-    # # TRAIN PLOT
-    # # Plot the data points
-    # plt.scatter(x_train, y_train)
-    #
-    # # Plot the line of best fit
-    # plt.plot(x, model_train.predict(x.reshape(-1, 1)))
-    # plt.text(2, 600000000, 'train score: %s' % train_score, bbox = dict(facecolor = 'blue', alpha = 0.5))
-    # plt.text(2, 600000000, 'test score: %s' % test_score, bbox = dict(facecolor = 'blue', alpha = 0.5))
-    # plt.xlabel("")
-    # plt.ylabel("")
-    # plt.title("")
-    # # plt.ylim(0, 1000000000)
-    #
-    # plt.show()

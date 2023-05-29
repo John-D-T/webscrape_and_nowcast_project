@@ -37,7 +37,7 @@ def checking_all_independent_variables_for_collinearity(df):
     vif_data["feature"] = X_variables.columns
     vif_data["VIF"] = [variance_inflation_factor(X_variables.values, i) for i in range(len(X_variables.columns))]
 
-    list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me', 'monthly_gross_ratio_rank_1', 'monthly_gross_ratio_rank_15']
+    list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me', 'monthly_gross_ratio_rank_1', 'frequency_academy_awards', 'cinema_lockdown']
 
     X_variables_reduced = df[list_of_columns_reduced]
     vif_data_reduced = pd.DataFrame()

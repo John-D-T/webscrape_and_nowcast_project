@@ -113,7 +113,7 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.write(endtex)
     f.close()
 
-def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, covid_check=False):
+def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
     '''
     Preparing regression input
     '''
@@ -121,9 +121,7 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     # clearing out existing graphs
     plt.clf()
 
-    # full_merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), monthly_admissions_df, on=['date_grouped']), weather_df, on=['date_grouped'])
-
-    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
+    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped']), twitter_scrape_df, on=['date_grouped'])
 
     multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
@@ -155,12 +153,15 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
-    # TODO - try removing rank 15 and 'average_temperature'
-    X_2SLS = merged_df[['monthly_gross_ratio_rank_1', 'cinema_lockdown',
-                   'frequency_cinemas_near_me', 'gdp_lag1']]
+    # Create a ratio on the weightings
+    merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
+
+    # TODO - add covid_lockdown only when time period includes covid
+    X_2SLS = merged_df[['ranking_ratio_1_3',
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment']]
     X_Z_2SLS = merged_df['monthly gross']
-    X_OLS = merged_df[['monthly_gross_ratio_rank_1', 'cinema_lockdown',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross']]
+    X_OLS = merged_df[['ranking_ratio_1_3',
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'sentiment','frequency academy awards']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 
@@ -276,12 +277,19 @@ class GeneratingDataSourceDataframes():
         twitter_sentiment_df = twitter_scrape_df[[date_column, sentiment]]
         twitter_sentiment_df['date'] = pd.to_datetime(twitter_sentiment_df['date'], format='%Y-%m-%d')
 
+        # Set the cutoff date, based on when covid started in the UK
+        cutoff_date = pd.to_datetime('2020-02-01')
+
+        # Filter the DataFrame
+        twitter_sentiment_df = twitter_sentiment_df[twitter_sentiment_df['date'] < cutoff_date]
+
         # Group by month?
-        grouped_df = twitter_sentiment_df.groupby(pd.Grouper(key='date', freq='M')).agg({'sentiment': pd.Series.mode})
+        # grouped_df = twitter_sentiment_df.groupby(pd.Grouper(key='date', freq='M')).agg({'sentiment': pd.Series.mode})
+        grouped_df = twitter_sentiment_df.groupby(pd.Grouper(key='date', freq='M')).agg({'sentiment': 'mean'}).reset_index()
+        grouped_df['date_grouped'] = pd.to_datetime(grouped_df['date']).apply(
+            lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
 
-        # TODO - check for nulls
-
-        # TODO - return df, to later pass into linear regression
+        return grouped_df[['date_grouped', 'sentiment']]
 
     def create_gdp_df(self):
         ### creating our gdp df
@@ -499,8 +507,8 @@ if __name__ == '__main__':
 
     weather_df = df_generator.generate_weather_df()
 
-    # twitter_scrape_df = df_generator.create_twitter_scrape_df()
-    #
+    twitter_scrape_df = df_generator.create_twitter_scrape_df()
+
     google_trends_df = df_generator.create_google_trends_df()  # google trends dataset
 
     gdp_df = df_generator.create_gdp_df()  # monthly gdp dataset
@@ -516,4 +524,4 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, covid_check=False)
+    multivariate_linear_regression(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=True)

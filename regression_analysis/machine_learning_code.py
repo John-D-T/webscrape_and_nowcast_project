@@ -25,5 +25,5 @@ def nowcast_regression(X, Y):
     intercept = model_train.intercept_
     coef = model_train.coef_
 
-    train_score = model_train.score(x_train, y_train) # 0.9761547122561756
-    test_score = model_train.score(x_test, y_test) # 0.9802132788375839
+    train_score = model_train.score(x_train, y_train) # 0.9874287562139491
+    test_score = model_train.score(x_test, y_test) # 0.9844758436829304

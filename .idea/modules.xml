@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/googlemaps-scraper.iml" filepath="$PROJECT_DIR$/.idea/googlemaps-scraper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/cinema_proxy_for_economic_activity.iml" filepath="$PROJECT_DIR$/.idea/cinema_proxy_for_economic_activity.iml" />
     </modules>
   </component>
 </project>

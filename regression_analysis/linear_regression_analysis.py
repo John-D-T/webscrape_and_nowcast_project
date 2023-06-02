@@ -113,7 +113,7 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.write(endtex)
     f.close()
 
-def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
+def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df):
     '''
     Preparing regression input
     '''
@@ -138,12 +138,11 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
                       pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
     merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
 
-    if covid_check:
-        # Set the cutoff date, based on when covid started in the UK
-        cutoff_date = pd.to_datetime('2020-02-01')
+    # Set the cutoff date, based on when covid started in the UK
+    cutoff_date = pd.to_datetime('2020-02-01')
 
-        # Filter the DataFrame
-        merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
+    # Filter the DataFrame
+    merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
 
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
@@ -249,7 +248,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     # clearing out existing graphs
     plt.clf()
 
-    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped']), twitter_scrape_df, on=['date_grouped'])
+    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
     multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
@@ -266,13 +265,6 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
                       pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
     merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
 
-    if covid_check:
-        # Set the cutoff date, based on when covid started in the UK
-        cutoff_date = pd.to_datetime('2020-02-01')
-
-        # Filter the DataFrame
-        merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
-
     merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     # Add lags for the dependent variable
@@ -286,10 +278,10 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     # TODO - add covid_lockdown only when time period includes covid
     X_2SLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment']]
+                   'frequency_cinemas_near_me', 'gdp_lag1']]
     X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'sentiment','frequency academy awards']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'frequency academy awards']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
 
@@ -651,9 +643,9 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=True)
+    multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
-    multivariate_linear_regression_post_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
+    multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
                                              box_office_weightings_df, google_trends_df, twitter_scrape_df,
                                              covid_check=True)
 

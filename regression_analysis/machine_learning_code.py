@@ -27,3 +27,10 @@ def nowcast_regression(X, Y):
 
     train_score = model_train.score(x_train, y_train) # 0.9874287562139491
     test_score = model_train.score(x_test, y_test) # 0.9844758436829304
+
+    # https://towardsdatascience.com/train-test-split-and-cross-validation-in-python-80b61beca4b6
+    predictions = model_train.predict(x_test)
+    plt.scatter(y_test, predictions)
+    plt.xlabel("True Values")
+    plt.ylabel("Predictions")
+

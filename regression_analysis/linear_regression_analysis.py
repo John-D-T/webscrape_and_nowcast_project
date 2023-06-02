@@ -220,10 +220,10 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
 
     stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
 
-    print(f'Test stat: {stat}') # 10.959761738829663
-    print(f'p-Value: {p}') # 0.05218365231539978
-    print(f'F-Value: {f}') # 2.2695840450750473
-    print(f'f_p_value: {fp}') # 0.05063914958172162
+    print(f'Test stat: {stat}') # TODO - fill in
+    print(f'p-Value: {p}') # TODO - fill in
+    print(f'F-Value: {f}') # TODO - fill in
+    print(f'f_p_value: {fp}') # TODO - fill in
 
     plt.scatter(y=model.resid, x=model.predict(), color='black', alpha=0.5, s=20)
     plt.hlines(y=0, xmin=0, xmax=4, color='orange')
@@ -238,7 +238,6 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
 
     nowcast_regression(X_OLS, Y)
 
-    # TODO - add a nowcast including covid
 
 def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
     '''
@@ -250,7 +249,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
-    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+    # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
@@ -278,16 +277,12 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     # TODO - add covid_lockdown only when time period includes covid
     X_2SLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'cinema_lockdown']]
     X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'frequency academy awards']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown']]
     Y = merged_df['gdp']
     Z = merged_df['frequency academy awards']
-
-    # initiating linear regression
-    # reg = LinearRegression()
-    # reg.fit(X_OLS, Y)
 
     X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
     X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
@@ -300,11 +295,11 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
 
     # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
+    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
 
     resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
 
-    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression_incl_covid', lin_reg=True)
 
     '''
     Now checking residuals
@@ -320,18 +315,19 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     ax.get_lines()[0].set_markerfacecolor('black')
     ax.get_lines()[0].set_markeredgecolor('black')
     ax.get_lines()[1].set_color('black')
-    plt.title('QQ Plot')
+    plt.title('QQ Plot - incl. covid')
     plt.show()
 
     plt.clf()
 
     # Plot outliers and check if any residuals are above 4 or < -4
+    # Note that for extreme residuals, check the QQplot to see if it's one outlier exclusively
     merged_df['residuals'] = ols_model.resids
     max_residual = merged_df['residuals'].max()
     min_residual = merged_df['residuals'].min()
 
     # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
-    dw_test = durbin_watson(ols_model.resids) # 2.030877
+    dw_test = durbin_watson(ols_model.resids) #
 
     # Homocedasticity test
         # Ho = Homocedasticity = P > 0.05

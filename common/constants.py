@@ -1,4 +1,5 @@
 csv_extension = '.csv'
+baftas = 'baftas'
 academy_awards = 'academy_awards'
 cinema_showings = 'cinema_showings'
 cinemas_near_me = 'cinemas_near_me'

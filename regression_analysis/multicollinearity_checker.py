@@ -30,7 +30,7 @@ def checking_all_independent_variables_for_collinearity(df):
     df['box_office_disparity'] = df['monthly_gross_ratio_rank_1'] - df['monthly_gross_ratio_rank_5']
 
     # calculating VIF
-    list_of_columns = ['frequency_academy_awards', 'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films',
+    list_of_columns = ['frequency_baftas', 'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films',
          'monthly_gross', 'number_of_cinemas', 'sentiment', 'average_temperature', 'box_office_disparity']
 
 
@@ -50,7 +50,7 @@ def checking_all_independent_variables_for_collinearity(df):
     fig.show()
 
     list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me',
-                               'box_office_disparity', 'frequency_academy_awards', 'average_temperature',
+                               'box_office_disparity', 'frequency_baftas', 'average_temperature',
                                'sentiment']
 
     X_variables_reduced = df[list_of_columns_reduced]

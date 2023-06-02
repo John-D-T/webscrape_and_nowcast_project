@@ -130,14 +130,6 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
     merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
 
-    # Add dummy variable for covid lockdown
-    list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
-                      pd.to_datetime('2020-06-01'), pd.to_datetime('2020-07-01'), pd.to_datetime('2020-09-01'),
-                      pd.to_datetime('2020-10-01'), pd.to_datetime('2020-11-01'), pd.to_datetime('2020-12-01'),
-                      pd.to_datetime('2021-01-01'), pd.to_datetime('2021-02-01'), pd.to_datetime('2021-03-01'),
-                      pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
-    merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
-
     # Set the cutoff date, based on when covid started in the UK
     cutoff_date = pd.to_datetime('2020-02-01')
 
@@ -155,21 +147,18 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # Create a ratio on the weightings
     merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
 
-    # TODO - add covid_lockdown only when time period includes covid
-    X_2SLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment']]
-    X_Z_2SLS = merged_df['monthly gross']
-    X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'sentiment','frequency academy awards']]
+    # TODO - leave out 2SLS until I can think of an instrument variable
+    # X_2SLS = merged_df[['ranking_ratio_1_3',
+    #                'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment', 'frequency_baftas']]
+    # X_Z_2SLS = merged_df['monthly gross']
+    X_OLS = merged_df[['ranking_ratio_1_3', 'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross',
+                       'sentiment', 'frequency_baftas', 'average_temperature']]
     Y = merged_df['gdp']
-    Z = merged_df['frequency academy awards']
+    # Z = merged_df['frequency academy awards']
 
-    # initiating linear regression
-    # reg = LinearRegression()
-    # reg.fit(X_OLS, Y)
 
     X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
-    X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    # X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
@@ -181,15 +170,14 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
 
-    resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
-
-    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+    # TODO - leave out until I can think of an instrument variable
+    # resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
+    #
+    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
 
     '''
     Now checking residuals
     '''
-
-
 
     # QQ Plot - https://towardsdatascience.com/q-q-plots-explained-5aa8495426c0
     fig = plt.figure()
@@ -254,7 +242,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
     # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
-    merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
+    merged_df.rename(columns={"monthly_gross": "monthly gross"}, inplace=True)
 
     # Add dummy variable for covid lockdown
     list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
@@ -275,17 +263,11 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     # Create a ratio on the weightings
     merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
 
-    # TODO - add covid_lockdown only when time period includes covid
-    X_2SLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'cinema_lockdown']]
-    X_Z_2SLS = merged_df['monthly gross']
     X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown']]
+                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown', 'frequency_baftas', 'average_temperature']]
     Y = merged_df['gdp']
-    Z = merged_df['frequency academy awards']
 
     X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
-    X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
@@ -296,11 +278,6 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
-
-    resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
-
-    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression_incl_covid', lin_reg=True)
-
     '''
     Now checking residuals
     '''
@@ -354,8 +331,6 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     '''
 
     nowcast_regression(X_OLS, Y)
-
-    # TODO - add a nowcast including covid
 
 class GeneratingDataSourceDataframes():
 
@@ -581,6 +556,10 @@ class GeneratingDataSourceDataframes():
         '''
 
         # generating dataframes
+        baftas_df = pd.read_csv(
+            os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', c.baftas + c.csv_extension),
+            skiprows=[0, 1]) \
+            .rename(columns={'%s: (United Kingdom)' % c.baftas: 'frequency_%s' % c.baftas})
         academy_awards_df = pd.read_csv(
             os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', c.academy_awards + c.csv_extension),
             skiprows=[0, 1]) \
@@ -604,13 +583,21 @@ class GeneratingDataSourceDataframes():
             .rename(columns={'%s: (United Kingdom)' % c.films_near_me.replace('_', ' '): 'frequency_%s' % c.films_near_me})
 
         # merge dataframes
-        google_trends_df = pd.merge(pd.merge(
+        google_trends_df = pd.merge(pd.merge(pd.merge(
             pd.merge(pd.merge(academy_awards_df, cinema_showings_df, on='Month'), cinemas_near_me_df, on='Month'),
-            films_df, on='Month'), films_near_me_df, on='Month')
+            films_df, on='Month'), films_near_me_df, on='Month'), baftas_df, on='Month')
         google_trends_df = google_trends_df.rename(columns={'Month': 'date_grouped'})
         google_trends_df['date_grouped'] = pd.to_datetime(google_trends_df['date_grouped']).apply(
             lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
         return google_trends_df
+
+def clean_up():
+    folder_path = os.path.join(os.getcwd())
+    extensions = ['.aux', '.txt', '.tex', '.log']
+
+    for filename in os.listdir(folder_path):
+        if any(filename.endswith(ext) for ext in extensions):
+            os.remove(os.path.join(folder_path, filename))
 
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:
@@ -642,6 +629,7 @@ if __name__ == '__main__':
     multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
     multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
-                                             box_office_weightings_df, google_trends_df, twitter_scrape_df,
-                                             covid_check=True)
+                                             box_office_weightings_df, google_trends_df, twitter_scrape_df)
+
+    clean_up()
 

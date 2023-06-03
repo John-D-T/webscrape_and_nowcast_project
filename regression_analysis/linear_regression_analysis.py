@@ -136,7 +136,9 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # Filter the DataFrame
     merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
 
-    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+    merged_df = merged_df.sort_values(by='date_grouped')
+
+    merged_df['date_grouped_ordinal'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     # Add lags for the dependent variable
     merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
@@ -154,6 +156,7 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     X_OLS = merged_df[['ranking_ratio_1_3', 'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross',
                        'sentiment', 'frequency_baftas', 'average_temperature']]
     Y = merged_df['gdp']
+    y_with_date = merged_df[['gdp', 'date_grouped']]
     # Z = merged_df['frequency academy awards']
 
 
@@ -224,7 +227,7 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     Nowcasting model
     '''
 
-    nowcast_regression(X_OLS, Y)
+    nowcast_regression(X_OLS, Y, y_with_date)
 
 
 def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):

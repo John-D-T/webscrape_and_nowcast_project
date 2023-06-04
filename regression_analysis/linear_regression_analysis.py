@@ -123,12 +123,21 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped']), twitter_scrape_df, on=['date_grouped'])
 
-    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+    merged_df['weighted_ranking'] = merged_df['monthly_gross_ratio_rank_1'] * 1 + merged_df['monthly_gross_ratio_rank_2'] * 2 \
+                                    + merged_df['monthly_gross_ratio_rank_3'] * 3 + merged_df['monthly_gross_ratio_rank_4'] * 4 \
+                                    + merged_df['monthly_gross_ratio_rank_5'] * 5 + merged_df['monthly_gross_ratio_rank_6'] * 6 \
+                                    + merged_df['monthly_gross_ratio_rank_7'] * 7 + merged_df['monthly_gross_ratio_rank_8'] * 8 \
+                                    + merged_df['monthly_gross_ratio_rank_9'] * 9 + merged_df['monthly_gross_ratio_rank_10'] * 10 \
+                                    + merged_df['monthly_gross_ratio_rank_11'] * 11 + merged_df['monthly_gross_ratio_rank_12'] * 12 \
+                                    + merged_df['monthly_gross_ratio_rank_13'] * 13 + merged_df['monthly_gross_ratio_rank_14'] * 14 \
+                                    + merged_df['monthly_gross_ratio_rank_15'] * 15
+
+    features = checking_all_independent_variables_for_collinearity(df=merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
     # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
-    merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
+    # merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
 
     # Set the cutoff date, based on when covid started in the UK
     cutoff_date = pd.to_datetime('2020-02-01')
@@ -146,32 +155,33 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
 
-    # Create a ratio on the weightings
-    merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
+
 
     # TODO - leave out 2SLS until I can think of an instrument variable
-    # X_2SLS = merged_df[['ranking_ratio_1_3',
+    # X_2SLS = merged_df[['ranking_discrepancy_rank_1_to_15',
     #                'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment', 'frequency_baftas']]
     # X_Z_2SLS = merged_df['monthly gross']
-    X_OLS = merged_df[['ranking_ratio_1_3', 'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross',
-                       'sentiment', 'frequency_baftas', 'average_temperature']]
-    Y = merged_df['gdp']
+    features.append('gdp_lag1')
+
+    x_ols = merged_df[features]
+    y = merged_df['gdp']
     y_with_date = merged_df[['gdp', 'date_grouped']]
     # Z = merged_df['frequency academy awards']
 
 
-    X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
     # X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
     '''
 
-    # OLS Regression using linearmodels - Has robust covariance
-    ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
 
-    # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
+    # OLS Regression using linearmodels - Has robust covariance
+    ols_model = IV2SLS(dependent=y, exog=x_ols, endog=None, instruments=None).fit()
+    # Leaving this out as we're going for a nowcast
+    # # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
 
     # TODO - leave out until I can think of an instrument variable
     # resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
@@ -197,37 +207,38 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
 
     # Plot outliers and check if any residuals are above 4 or < -4
     merged_df['residuals'] = ols_model.resids
-    max_residual = merged_df['residuals'].max()
-    min_residual = merged_df['residuals'].min()
+    max_residual = merged_df['residuals'].max()  # 1.164928414420217
+    min_residual = merged_df['residuals'].min()  # -1.3439102445690594
 
     # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
-    dw_test = durbin_watson(ols_model.resids) # 2.030877
+    dw_test = durbin_watson(ols_model.resids) # 2.8126133956116295
 
     # Homocedasticity test
         # Ho = Homocedasticity = P > 0.05
         # Ha = There's no homocedasticity = p <=0.05
 
-    model = sm.OLS(Y, X_OLS).fit()
+    model = sm.OLS(y, x_ols).fit()
 
     stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
 
-    print(f'Test stat: {stat}') # TODO - fill in
-    print(f'p-Value: {p}') # TODO - fill in
-    print(f'F-Value: {f}') # TODO - fill in
-    print(f'f_p_value: {fp}') # TODO - fill in
+    print(f'Test stat: {stat}') # 17.91253203099973
+    print(f'p-Value: {p}') # 0.012370934841518211
+    print(f'F-Value: {f}') # 2.81236654211901
+    print(f'f_p_value: {fp}') # 0.009855514708688591
 
     plt.scatter(y=model.resid, x=model.predict(), color='black', alpha=0.5, s=20)
     plt.hlines(y=0, xmin=0, xmax=4, color='orange')
     plt.xlim(80,100)
     plt.xlabel('Predicted values')
     plt.ylabel('Residuals')
+    plt.title('Plotted residuals')
     plt.show()
 
     '''
     Nowcasting model
     '''
 
-    nowcast_regression(X_OLS, Y, y_with_date)
+    nowcast_regression(x_ols, y, y_with_date, features)
 
 
 def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
@@ -240,7 +251,16 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
 
-    # multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+    merged_df['weighted_ranking'] = merged_df['monthly_gross_ratio_rank_1'] * 1 + merged_df['monthly_gross_ratio_rank_2'] * 2 \
+                                    + merged_df['monthly_gross_ratio_rank_3'] * 3 + merged_df['monthly_gross_ratio_rank_4'] * 4 \
+                                    + merged_df['monthly_gross_ratio_rank_5'] * 5 + merged_df['monthly_gross_ratio_rank_6'] * 6 \
+                                    + merged_df['monthly_gross_ratio_rank_7'] * 7 + merged_df['monthly_gross_ratio_rank_8'] * 8 \
+                                    + merged_df['monthly_gross_ratio_rank_9'] * 9 + merged_df['monthly_gross_ratio_rank_10'] * 10 \
+                                    + merged_df['monthly_gross_ratio_rank_11'] * 11 + merged_df['monthly_gross_ratio_rank_12'] * 12 \
+                                    + merged_df['monthly_gross_ratio_rank_13'] * 13 + merged_df['monthly_gross_ratio_rank_14'] * 14 \
+                                    + merged_df['monthly_gross_ratio_rank_15'] * 15
+
+    features = checking_all_independent_variables_for_collinearity(df = merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
@@ -266,26 +286,28 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     # Create a ratio on the weightings
     merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
 
-    X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown', 'frequency_baftas', 'average_temperature']]
-    Y = merged_df['gdp']
+    # TODO - Note difference between including these and removing these - 'frequency_baftas', 'average_temperature'
+    features.append('gdp_lag1', 'cinema_lockdown')
+    # features = ['ranking_ratio_1_3',
+    #                'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown']
+    x_ols = merged_df[features]
+    y = merged_df['gdp']
+    y_with_date = merged_df[['gdp', 'date_grouped']]
 
-    X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
     '''
 
     # OLS Regression using linearmodels - Has robust covariance
-    ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
+    ols_model = IV2SLS(dependent=y, exog=x_ols, endog=None, instruments=None).fit()
 
     # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
     '''
     Now checking residuals
     '''
-
-
 
     # QQ Plot - https://towardsdatascience.com/q-q-plots-explained-5aa8495426c0
     fig = plt.figure()
@@ -313,7 +335,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
         # Ho = Homocedasticity = P > 0.05
         # Ha = There's no homocedasticity = p <=0.05
 
-    model = sm.OLS(Y, X_OLS).fit()
+    model = sm.OLS(y, x_ols).fit()
 
     stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
 
@@ -333,7 +355,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     Nowcasting model
     '''
 
-    nowcast_regression(X_OLS, Y)
+    nowcast_regression(x_ols, y, y_with_date, features)
 
 class GeneratingDataSourceDataframes():
 

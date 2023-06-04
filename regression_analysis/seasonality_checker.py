@@ -20,18 +20,17 @@ from regression_analysis.linear_regression_analysis import GeneratingDataSourceD
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 def checking_google_trends_for_seasonality():
-    # TODO - add seasonality checks for all google trend keywords
     # clearing out existing graphs
     pyplot.clf()
 
-    filepath = os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', 'academy_awards.csv')
+    filepath = os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', 'baftas.csv')
 
     # index_col helps adjust x axis to fit months
     df = pd.read_csv(filepath, skiprows=[0,1], index_col="Month")
 
     ax = df.plot(title='')
 
-    ax.set(xlabel='x axis', ylabel='y axis')
+    ax.set(xlabel='date', ylabel='relative search popularity')
     pyplot.show()
 
 
@@ -89,6 +88,6 @@ def checking_monthly_admissions_for_seasonality():
 
 
 if __name__ == '__main__':
-    #checking_google_trends_for_seasonality()
-    checking_bfi_box_office_for_seasonality()
+    checking_google_trends_for_seasonality()
+    #checking_bfi_box_office_for_seasonality()
     # checking_monthly_admissions_for_seasonality()

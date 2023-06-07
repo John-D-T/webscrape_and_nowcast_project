@@ -2,6 +2,7 @@
 pip install textblob
 pip install vaderSentiment
 pip install wordcloud
+pip install polars
 
 3.7 VENV
 
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 import numpy as np
+import polars as pl
 
 def sentiment_analysis(df, column_name):
     analyzer = SentimentIntensityAnalyzer()
@@ -49,28 +51,37 @@ def generate_wordcloud(df):
 
         return pd.Series([tweet])
 
+    df = df[['tweet']]
     df[['plain_text']] = df.tweet.apply(tweet_cleaner)
     # Convert all text to lowercase
     df.plain_text = df.plain_text.str.lower()
     # Remove newline character
     df.plain_text = df.plain_text.str.replace('\n', '')
     # Replacing any empty strings with null
-    df = df.replace(r'^\s*$', np.nan, regex=True)
+    #df = df.replace(r'^\s*$', np.nan, regex=True)
     if df.isnull().sum().plain_text == 0:
         print('no empty strings')
     else:
-        df.dropna(inplace=True)
+        #df.dropna(inplace=True)
+        pass
 
     uncategorized_plain_text = ' '.join(df.plain_text)
     uncategorized_plain_text_list = uncategorized_plain_text.split(' ')
 
-    positive_text_list = []
-    negative_text_list = []
-    for word in uncategorized_plain_text_list:
-        if SentimentIntensityAnalyzer().polarity_scores(word) > 0:
-            positive_text_list.append(word)
-        elif SentimentIntensityAnalyzer().polarity_scores(word) < 0:
-            negative_text_list.append(word)
+    df_words_pl = pl.DataFrame(uncategorized_plain_text_list, schema=['word'])
+    df_words = pd.DataFrame(uncategorized_plain_text_list, columns=['word'])
+
+    # Chunk attempt
+    list_df = np.array_split(df_words, 100)
+    for subset_df in list_df:
+        subset_df['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(subset_df['word'])['compound'] > 0
+
+    df_words['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(df_words['word'])['compound'] > 0
+
+    positive_text_list = [word for word in uncategorized_plain_text_list if
+                          SentimentIntensityAnalyzer().polarity_scores(word)['compound'] > 0]
+    negative_text_list = [word for word in uncategorized_plain_text_list if
+                          SentimentIntensityAnalyzer().polarity_scores(word)['compound'] < 0]
 
     positive_text = ' '.join(positive_text_list)
     negative_text = ' '.join(negative_text_list)
@@ -84,7 +95,7 @@ def generate_wordcloud(df):
     from PIL import Image
     mask = np.array(Image.open(os.path.join(os.getcwd(), 'film_icon.PNG')))
     wordcloud = WordCloud(mask=mask, background_color="white", width=3000,
-                          height=2000, max_words=500).generate()
+                          height=2000, max_words=500).generate(negative_text)
     # set the word color to black
     wordcloud.recolor(color_func=black_color_func)
     # set the figsize

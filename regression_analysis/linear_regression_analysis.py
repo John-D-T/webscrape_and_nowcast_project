@@ -644,7 +644,7 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    #multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
+    multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
     multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
                                              box_office_weightings_df, google_trends_df, twitter_scrape_df)

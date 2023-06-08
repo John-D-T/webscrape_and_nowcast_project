@@ -72,7 +72,6 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     if covid:
         title = 'Feature importance - Lin Reg nowcast (including covid)'
         plt.title(title)
-        plt.savefig('%s.png' % title)
     else:
         title = 'Feature importance - Lin Reg nowcast (pre-covid)'
         plt.title(title)
@@ -98,7 +97,6 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     if covid:
         title = 'Feature importance - GBR nowcast (including covid)'
         plt.title(title)
-        plt.savefig('%s.png' % title)
     else:
         title = 'Feature importance - GBR Reg nowcast (pre-covid)'
         plt.title(title)

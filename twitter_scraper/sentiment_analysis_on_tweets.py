@@ -15,6 +15,10 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 import numpy as np
 import polars as pl
+from langdetect import detect
+import re
+from PIL import Image
+
 
 def sentiment_analysis(df, column_name):
     analyzer = SentimentIntensityAnalyzer()
@@ -44,7 +48,7 @@ def plot_sentiment_analysis(df):
 def generate_wordcloud(df):
     # https://towardsdatascience.com/text-analytics-101-word-cloud-and-sentiment-analysis-2c3ade81c7e8
     # https://towardsdatascience.com/how-to-make-word-clouds-in-python-that-dont-suck-86518cdcb61f
-    import re
+
     def tweet_cleaner(x):
         tweet = re.sub("[@&][A-Za-z0-9_]+", "", x)  # Remove mentions
         tweet = re.sub(r"http\S+", "", tweet)  # Remove media links
@@ -57,6 +61,8 @@ def generate_wordcloud(df):
     df.plain_text = df.plain_text.str.lower()
     # Remove newline character
     df.plain_text = df.plain_text.str.replace('\n', '')
+    # Remove 'odeon' term
+    df.plain_text = df.plain_text.str.replace('odeon', '')
     # Replacing any empty strings with null
     #df = df.replace(r'^\s*$', np.nan, regex=True)
     if df.isnull().sum().plain_text == 0:
@@ -65,40 +71,57 @@ def generate_wordcloud(df):
         #df.dropna(inplace=True)
         pass
 
-    uncategorized_plain_text = ' '.join(df.plain_text)
-    uncategorized_plain_text_list = uncategorized_plain_text.split(' ')
+    # def detect_textlang(text):
+    #     try:
+    #         src_lang = detect(text)
+    #         if src_lang == 'en':
+    #             return 'en'
+    #         else:
+    #             # return "NA"
+    #             return src_lang
+    #     except:
+    #         return "NA"
+    #
+    # df['text_lang'] = df.plain_text.apply(detect_textlang)
+    #
+    # # Group tweets by language and list the top 10
+    # plt.figure(figsize=(4, 3))
+    # df.groupby(df.text_lang).plain_text.count().sort_values(ascending=False).head(10).plot.bar()
+    # plt.show()
+    #
+    # # Filter out non english tweets
+    # df = df[(df.text_lang == "en")]
 
-    df_words_pl = pl.DataFrame(uncategorized_plain_text_list, schema=['word'])
-    df_words = pd.DataFrame(uncategorized_plain_text_list, columns=['word'])
-
-    # Chunk attempt
-    list_df = np.array_split(df_words, 100)
-    for subset_df in list_df:
-        subset_df['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(subset_df['word'])['compound'] > 0
-
-    df_words['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(df_words['word'])['compound'] > 0
-
-    positive_text_list = [word for word in uncategorized_plain_text_list if
-                          SentimentIntensityAnalyzer().polarity_scores(word)['compound'] > 0]
-    negative_text_list = [word for word in uncategorized_plain_text_list if
-                          SentimentIntensityAnalyzer().polarity_scores(word)['compound'] < 0]
-
-    positive_text = ' '.join(positive_text_list)
-    negative_text = ' '.join(negative_text_list)
+    # # Attempting to divide text into positive and negative lists
+    # uncategorized_plain_text = ' '.join(df.plain_text)
+    # uncategorized_plain_text_list = uncategorized_plain_text.split(' ')
+    # df_words_pl = pl.DataFrame(uncategorized_plain_text_list, schema=['word'])
+    # df_words = pd.DataFrame(uncategorized_plain_text_list, columns=['word'])
+    #
+    # # Chunk attempt
+    # list_df = np.array_split(df_words, 100)
+    # for subset_df in list_df:
+    #     subset_df['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(subset_df['word'])['compound'] > 0
+    #
+    # df_words['sentiment'] = SentimentIntensityAnalyzer().polarity_scores(df_words['word'])['compound'] > 0
+    #
+    # positive_text_list = [word for word in uncategorized_plain_text_list if
+    #                       SentimentIntensityAnalyzer().polarity_scores(word)['compound'] > 0]
+    # negative_text_list = [word for word in uncategorized_plain_text_list if
+    #                       SentimentIntensityAnalyzer().polarity_scores(word)['compound'] < 0]
+    #
+    # positive_text = ' '.join(positive_text_list)
+    # negative_text = ' '.join(negative_text_list)
     # change the value to black
-    def black_color_func(word, font_size, position, orientation, random_state=None, **kwargs):
+    def black_color_func():
         return ("hsl(0,100%, 1%)")
 
-    # set the wordcloud background color to white
-    # set max_words to 1000
-    # set width and height to higher quality, 3000 x 2000
-    from PIL import Image
+    # Plotting the image
     mask = np.array(Image.open(os.path.join(os.getcwd(), 'film_icon.PNG')))
     wordcloud = WordCloud(mask=mask, background_color="white", width=3000,
-                          height=2000, max_words=500).generate(negative_text)
+                          height=2000, max_words=500).generate(' '.join(df.plain_text))
     # set the word color to black
     wordcloud.recolor(color_func=black_color_func)
-    # set the figsize
     plt.figure(figsize=[15, 10])
     # plot the wordcloud
     plt.imshow(wordcloud, interpolation="bilinear")

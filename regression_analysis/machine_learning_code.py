@@ -7,12 +7,19 @@ from sklearn.datasets import load_iris
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
+from tabulate import tabulate
+from texttable import Texttable
+import latextable
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
 
 """
 VENV 3.7
+
+pip install tabulate
+pip install texttable
+pip install latextable
 """
 
 
@@ -40,7 +47,7 @@ def nowcast_regression(X, Y, y_with_date, features):
     test_score_ols = model_train.score(x_test, y_test) # 0.9947080976845063
 
     train_score_gbr = gbr_model.score(x_train, y_train) #
-    gbr_test_score_gbr = gbr_model.score(x_test, y_test) #
+    test_score_gbr = gbr_model.score(x_test, y_test) #
 
     train_score_rfr = rfr_model.score(x_train, y_train) #
     test_score_rfr = rfr_model.score(x_test, y_test) #
@@ -67,9 +74,9 @@ def nowcast_regression(X, Y, y_with_date, features):
     # plot feature importance
     feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas', 'average_temperature', 'sentiment',
                     'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='yellow')
+    bars = ax.barh(feature_list, importance, color='limegreen')
     ax.bar_label(bars)
-    plt.title('Feature importance - RFR nowcast (pre-covid)')
+    plt.title('Feature importance - GBR nowcast (pre-covid)')
     plt.show()
     plt.clf()
 
@@ -82,9 +89,9 @@ def nowcast_regression(X, Y, y_with_date, features):
     # plot feature importance
     feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas', 'average_temperature', 'sentiment',
                     'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='limegreen')
+    bars = ax.barh(feature_list, importance, color='yellow')
     ax.bar_label(bars)
-    plt.title('Feature importance - GBR nowcast (pre-covid)')
+    plt.title('Feature importance - RFR nowcast (pre-covid)')
     plt.show()
     plt.clf()
 
@@ -161,10 +168,33 @@ def nowcast_regression(X, Y, y_with_date, features):
     dm_test = diebold_mariano_test(y_test, y_pred, y_pred_gbr, h=1, crit="MSE")
 
 
-
     # TODO - VAR test
     # https://www.machinelearningplus.com/time-series/vector-autoregression-examples-python/
     # https://www.analyticsvidhya.com/blog/2021/08/vector-autoregressive-model-in-python/
+
+    # Generate Latex Table with all results
+    rows = [['Model', 'train score', 'test score', 'RMSE'],
+            ['LR', train_score_ols, test_score_ols, rmse_lr],
+            ['GBR', train_score_gbr, test_score_gbr, rmse_gbr],
+            ['RFR', train_score_rfr, test_score_rfr, rmse_rfr]]
+            #['VAR', 'ESA', '21', '2002']]
+
+    table = Texttable()
+    table.set_cols_align(["c"] * 4)
+    table.set_deco(Texttable.HEADER | Texttable.VLINES)
+    table.add_rows(rows)
+
+    print('Tabulate Table:')
+    print(tabulate(rows, headers='firstrow'))
+
+    print('\nTexttable Table:')
+    print(table.draw())
+
+    print('\nTabulate Latex:')
+    print(tabulate(rows, headers='firstrow', tablefmt='latex'))
+
+    print('\nTexttable Latex:')
+    print(latextable.draw_latex(table, caption="A comparison of rocket features."))
 
 
 

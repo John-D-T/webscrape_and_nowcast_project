@@ -260,12 +260,12 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
                                     + merged_df['monthly_gross_ratio_rank_13'] * 13 + merged_df['monthly_gross_ratio_rank_14'] * 14 \
                                     + merged_df['monthly_gross_ratio_rank_15'] * 15
 
-    features = checking_all_independent_variables_for_collinearity(df = merged_df)
+    features = checking_all_independent_variables_for_collinearity(df = merged_df, covid=True)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
     # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
-    merged_df.rename(columns={"monthly_gross": "monthly gross"}, inplace=True)
+    # merged_df.rename(columns={"monthly_gross": "monthly gross"}, inplace=True)
 
     # Add dummy variable for covid lockdown
     list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
@@ -286,25 +286,18 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     # Create a ratio on the weightings
     merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
 
-    # TODO - Note difference between including these and removing these - 'frequency_baftas', 'average_temperature'
-    features.append('gdp_lag1', 'cinema_lockdown')
-    # features = ['ranking_ratio_1_3',
-    #                'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'cinema_lockdown']
+    features.extend(['gdp_lag1', 'cinema_lockdown'])
     x_ols = merged_df[features]
     y = merged_df['gdp']
     y_with_date = merged_df[['gdp', 'date_grouped']]
-
     x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
-
-    '''
-    Now plotting regression
-    '''
 
     # OLS Regression using linearmodels - Has robust covariance
     ols_model = IV2SLS(dependent=y, exog=x_ols, endog=None, instruments=None).fit()
-
+    # Leaving this out as we're going for a nowcast
     # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
+
     '''
     Now checking residuals
     '''
@@ -325,11 +318,11 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     # Plot outliers and check if any residuals are above 4 or < -4
     # Note that for extreme residuals, check the QQplot to see if it's one outlier exclusively
     merged_df['residuals'] = ols_model.resids
-    max_residual = merged_df['residuals'].max()
-    min_residual = merged_df['residuals'].min()
+    max_residual = merged_df['residuals'].max() # 8.078761020132063
+    min_residual = merged_df['residuals'].min() # -12.15981483406162
 
     # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
-    dw_test = durbin_watson(ols_model.resids) #
+    dw_test = durbin_watson(ols_model.resids) # 1.164954221660367
 
     # Homocedasticity test
         # Ho = Homocedasticity = P > 0.05
@@ -355,7 +348,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     Nowcasting model
     '''
 
-    nowcast_regression(x_ols, y, y_with_date, features)
+    nowcast_regression(x_ols, y, y_with_date, features, covid=True)
 
 class GeneratingDataSourceDataframes():
 
@@ -651,7 +644,7 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
+    #multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
     multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
                                              box_office_weightings_df, google_trends_df, twitter_scrape_df)

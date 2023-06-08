@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestRegressor
 from tabulate import tabulate
 from texttable import Texttable
 import latextable
+from common.latex_file_generator import save_table_as_latex
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -23,7 +24,7 @@ pip install latextable
 """
 
 
-def nowcast_regression(X, Y, y_with_date, features):
+def nowcast_regression(X, Y, y_with_date, features, covid=False):
     """
     Function to nowcast, using machine learning techniques
     """
@@ -43,14 +44,14 @@ def nowcast_regression(X, Y, y_with_date, features):
     #TODO - ForecasterAutoreg - recursive forecasting - https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html
 
 
-    train_score_ols = model_train.score(x_train, y_train) # 0.9958670475825846
-    test_score_ols = model_train.score(x_test, y_test) # 0.9947080976845063
+    train_score_ols = model_train.score(x_train, y_train)
+    test_score_ols = model_train.score(x_test, y_test)
 
-    train_score_gbr = gbr_model.score(x_train, y_train) #
-    test_score_gbr = gbr_model.score(x_test, y_test) #
+    train_score_gbr = gbr_model.score(x_train, y_train)
+    test_score_gbr = gbr_model.score(x_test, y_test)
 
-    train_score_rfr = rfr_model.score(x_train, y_train) #
-    test_score_rfr = rfr_model.score(x_test, y_test) #
+    train_score_rfr = rfr_model.score(x_train, y_train)
+    test_score_rfr = rfr_model.score(x_test, y_test)
 
     # Lin Reg - get importance of each feature
     fig, ax = plt.subplots()
@@ -58,11 +59,23 @@ def nowcast_regression(X, Y, y_with_date, features):
     for i, v in enumerate(importance):
         print('Feature: %0d, Score: %.5f' % (i, v))
     # plot feature importance
-    feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas', 'average_temperature', 'sentiment',
-                    'weighted_ranking', 'gdp_lag1']
+    if covid:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'weighted_ranking',
+                        'gdp_lag1', 'cinema_lockdown']
+    else:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'sentiment',
+                        'weighted_ranking', 'gdp_lag1']
     bars = ax.barh(feature_list, importance, color='maroon')
     ax.bar_label(bars)
-    plt.title('Feature importance - GBR nowcast (pre-covid)')
+    if covid:
+        title = 'Feature importance - Lin Reg nowcast (including covid)'
+        plt.title(title)
+        plt.savefig('%s.png' % title)
+    else:
+        title = 'Feature importance - Lin Reg nowcast (pre-covid)'
+        plt.title(title)
     plt.show()
 
     # GBR - get importance of each feature
@@ -72,11 +85,23 @@ def nowcast_regression(X, Y, y_with_date, features):
     for i, v in enumerate(importance):
         print('Feature: %0d, Score: %.5f' % (i, v))
     # plot feature importance
-    feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas', 'average_temperature', 'sentiment',
-                    'weighted_ranking', 'gdp_lag1']
+    if covid:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'weighted_ranking',
+                        'gdp_lag1', 'cinema_lockdown']
+    else:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'sentiment',
+                        'weighted_ranking', 'gdp_lag1']
     bars = ax.barh(feature_list, importance, color='limegreen')
     ax.bar_label(bars)
-    plt.title('Feature importance - GBR nowcast (pre-covid)')
+    if covid:
+        title = 'Feature importance - GBR nowcast (including covid)'
+        plt.title(title)
+        plt.savefig('%s.png' % title)
+    else:
+        title = 'Feature importance - GBR Reg nowcast (pre-covid)'
+        plt.title(title)
     plt.show()
     plt.clf()
 
@@ -87,11 +112,23 @@ def nowcast_regression(X, Y, y_with_date, features):
     for i, v in enumerate(importance):
         print('Feature: %0d, Score: %.5f' % (i, v))
     # plot feature importance
-    feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas', 'average_temperature', 'sentiment',
-                    'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='yellow')
+    if covid:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'weighted_ranking',
+                        'gdp_lag1', 'cinema_lockdown']
+    else:
+        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
+                        'average_temperature', 'sentiment',
+                        'weighted_ranking', 'gdp_lag1']
+    bars = ax.barh(feature_list, importance, color='gold')
     ax.bar_label(bars)
-    plt.title('Feature importance - RFR nowcast (pre-covid)')
+    if covid:
+        title = 'Feature importance - RFR nowcast (including covid)'
+        plt.title(title)
+        plt.savefig('%s.png' % title)
+    else:
+        title = 'Feature importance - RFR nowcast (pre-covid)'
+        plt.title(title)
     plt.show()
     plt.clf()
 
@@ -116,7 +153,10 @@ def nowcast_regression(X, Y, y_with_date, features):
     leg = plt.legend(loc='upper center')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    plt.title('Nowcast test set - Linear Regression (pre-covid)')
+    if covid:
+        plt.title('Nowcast test set - Linear Regression (including covid)')
+    else:
+        plt.title('Nowcast test set - Linear Regression (pre-covid)')
 
     plt.clf()
 
@@ -130,7 +170,10 @@ def nowcast_regression(X, Y, y_with_date, features):
     plt.grid()
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    plt.title('Nowcast test set - GBR (pre-covid)')
+    if covid:
+        plt.title('Nowcast test set - GBR (including covid)')
+    else:
+        plt.title('Nowcast test set - GBR (pre-covid)')
     plt.show()
 
     plt.clf()
@@ -143,23 +186,26 @@ def nowcast_regression(X, Y, y_with_date, features):
 
     plt.plot(y_test_full['date_grouped'], y_test_full['gdp_x'], '-o', label="actual gdp", markersize=3)
     plt.plot(x_test_full['date_grouped'], x_test_full['y_pred_rfr'], '-o', label="gradient boosting regression",
-             markersize=3, color='yellow')
+             markersize=3, color='gold')
     leg = plt.legend(loc='upper center')
     plt.grid()
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    plt.title('Nowcast test set - RFR (pre-covid)')
+    if covid:
+        plt.title('Nowcast test set - RFR (including covid)')
+    else:
+        plt.title('Nowcast test set - RFR (pre-covid)')
     plt.show()
 
     plt.clf()
 
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
-    rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred)) #
+    rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
 
-    rmse_gbr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_gbr)) #
+    rmse_gbr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_gbr))
 
-    rmse_rfr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_rfr)) #
+    rmse_rfr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_rfr))
 
     # Calculating DM-test (Diebold-Mariano Test) to compare models
     # https://www.kaggle.com/code/jorgesandoval/xgboost-vs-lightgbm-using-diebold-mariano-test/notebook
@@ -194,7 +240,10 @@ def nowcast_regression(X, Y, y_with_date, features):
     print(tabulate(rows, headers='firstrow', tablefmt='latex'))
 
     print('\nTexttable Latex:')
-    print(latextable.draw_latex(table, caption="A comparison of rocket features."))
+    print(latextable.draw_latex(table, caption="A comparison of nowcasting models."))
 
-
+    if covid:
+        save_table_as_latex(latextable.draw_latex(table, caption="A comparison of nowcasting models (including covid)"), 'model_comparison_incl_covid')
+    else:
+        save_table_as_latex(latextable.draw_latex(table, caption="A comparison of nowcasting models (pre-covid)"), 'model_comparison_pre_covid')
 

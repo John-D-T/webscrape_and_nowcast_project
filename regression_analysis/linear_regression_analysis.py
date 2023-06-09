@@ -13,6 +13,9 @@ from statsmodels.tools.tools import add_constant
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.stats.api as sms
 import statsmodels.api as sm
+from texttable import Texttable
+import latextable
+from common.latex_file_generator import save_table_as_latex
 
 from common import constants as c
 from common.latex_file_generator import save_model_as_image
@@ -234,14 +237,23 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     plt.title('Plotted residuals')
     plt.show()
 
+    # Generate Latex Table with all results
+    rows = [['Model', 'durbin watson', 'min residual', 'max residual', 'het breuschpagan p value'],
+            ['Pre covid LR', dw_test, min_residual, max_residual, p]]
+
+    save_table_as_latex(file_name='linear_reg_violation_pre_covid', rows=rows, header_count=5,
+                        caption="Linear Regression violation checks (pre covid)")
+
     '''
     Nowcasting model
     '''
 
     nowcast_regression(x_ols, y, y_with_date, features)
 
+    return rows
 
-def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
+
+def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, rows, covid_check=False):
     '''
     Preparing regression input
     '''
@@ -343,6 +355,15 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     plt.xlabel('Predicted values')
     plt.ylabel('Residuals')
     plt.show()
+
+    # Generate Latex Table with all results
+    rows_incl_covid = [['Model', 'durbin watson', 'min residual', 'max residual', 'het breuschpagan p value'],
+                        ['Incl covid LR', dw_test, min_residual, max_residual, p]]
+
+    rows_incl_covid.append(rows[1])
+
+    save_table_as_latex(file_name='linear_reg_violation_incl_covid', rows=rows_incl_covid, header_count=5,
+                        caption="Linear Regression violation checks (including covid)")
 
     '''
     Nowcasting model
@@ -644,10 +665,10 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
+    rows = multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
     multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
-                                             box_office_weightings_df, google_trends_df, twitter_scrape_df)
+                                             box_office_weightings_df, google_trends_df, twitter_scrape_df, rows)
 
     clean_up()
 

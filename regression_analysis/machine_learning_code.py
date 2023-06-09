@@ -123,7 +123,6 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     if covid:
         title = 'Feature importance - RFR nowcast (including covid)'
         plt.title(title)
-        plt.savefig('%s.png' % title)
     else:
         title = 'Feature importance - RFR nowcast (pre-covid)'
         plt.title(title)
@@ -223,25 +222,8 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
             ['RFR', train_score_rfr, test_score_rfr, rmse_rfr]]
             #['VAR', 'ESA', '21', '2002']]
 
-    table = Texttable()
-    table.set_cols_align(["c"] * 4)
-    table.set_deco(Texttable.HEADER | Texttable.VLINES)
-    table.add_rows(rows)
-
-    print('Tabulate Table:')
-    print(tabulate(rows, headers='firstrow'))
-
-    print('\nTexttable Table:')
-    print(table.draw())
-
-    print('\nTabulate Latex:')
-    print(tabulate(rows, headers='firstrow', tablefmt='latex'))
-
-    print('\nTexttable Latex:')
-    print(latextable.draw_latex(table, caption="A comparison of nowcasting models."))
-
     if covid:
-        save_table_as_latex(latextable.draw_latex(table, caption="A comparison of nowcasting models (including covid)"), 'model_comparison_incl_covid')
+        save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='model_comparison_incl_covid', rows=rows, header_count=4)
     else:
-        save_table_as_latex(latextable.draw_latex(table, caption="A comparison of nowcasting models (pre-covid)"), 'model_comparison_pre_covid')
+        save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='model_comparison_pre_covid', rows=rows, header_count=4)
 

@@ -1,4 +1,6 @@
 import subprocess
+from texttable import Texttable
+import latextable
 
 
 def save_df_as_image(df, file_name):
@@ -20,7 +22,15 @@ def save_df_as_image(df, file_name):
     subprocess.call(['pdflatex', filename])
     subprocess.call(['convert', '-density', '300', pdffile, '-quality', '90', outname])
 
-def save_table_as_latex(table, file_name):
+def save_table_as_latex(file_name, rows, header_count, caption):
+
+    table = Texttable()
+    table.set_cols_align(["c"] * header_count)
+    table.set_deco(Texttable.HEADER | Texttable.VLINES)
+    table.add_rows(rows)
+
+    table = latextable.draw_latex(table, caption=caption)
+
     filename = '%s.tex' % file_name
     pdffile = '%s.pdf' % file_name
     outname = '%s.png' % file_name

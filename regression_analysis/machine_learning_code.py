@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +11,7 @@ from tabulate import tabulate
 from texttable import Texttable
 import latextable
 from common.latex_file_generator import save_table_as_latex
+from common.visualisations import plot_importance_features, plot_nowcast
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -37,15 +38,20 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     print('Number of records in the training dataset: ', len(y_train))
     print('Number of records in the testing dataset: ', len(y_test))
 
-    model_train = LinearRegression().fit(x_train, y_train)
+    lr_model = LinearRegression().fit(x_train, y_train)
     gbr_model = GradientBoostingRegressor(random_state=0).fit(x_train, y_train)
     rfr_model = RandomForestRegressor(random_state=0).fit(x_train, y_train)
+    ridge_model_alpha_1 = Ridge(alpha=1).fit(x_train, y_train)
+    lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
+    # higher the alpha value, more restriction on the coefficients; low alpha > more generalization,
+
+
     #forecaster_model = ForecasterAutoreg(regressor=regressor, lags=20)
     #TODO - ForecasterAutoreg - recursive forecasting - https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html
 
 
-    train_score_ols = model_train.score(x_train, y_train)
-    test_score_ols = model_train.score(x_test, y_test)
+    train_score_ols = lr_model.score(x_train, y_train)
+    test_score_ols = lr_model.score(x_test, y_test)
 
     train_score_gbr = gbr_model.score(x_train, y_train)
     test_score_gbr = gbr_model.score(x_test, y_test)
@@ -53,152 +59,86 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     train_score_rfr = rfr_model.score(x_train, y_train)
     test_score_rfr = rfr_model.score(x_test, y_test)
 
+    train_score_ridge = ridge_model_alpha_1.score(x_train, y_train)
+    test_score_ridge = ridge_model_alpha_1.score(x_test, y_test)
+
+    train_score_lasso = lasso_model_alpha_1.score(x_train, y_train)
+    test_score_lasso = lasso_model_alpha_1.score(x_test, y_test)
+
+    covid_features = ['constant', 'monthly gross', 'frequency_cinemas_near_me',
+                                             'frequency_baftas',
+                                             'average_temperature', 'weighted_ranking',
+                                             'gdp_lag1', 'cinema_lockdown']
+    non_covid_features = ['constant', 'monthly gross', 'frequency_cinemas_near_me',
+                          'frequency_baftas',
+                          'average_temperature', 'sentiment',
+                          'weighted_ranking', 'gdp_lag1']
+
     # Lin Reg - get importance of each feature
-    fig, ax = plt.subplots()
-    importance = model_train.coef_
-    for i, v in enumerate(importance):
-        print('Feature: %0d, Score: %.5f' % (i, v))
-    # plot feature importance
-    if covid:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'weighted_ranking',
-                        'gdp_lag1', 'cinema_lockdown']
-    else:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'sentiment',
-                        'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='maroon')
-    ax.bar_label(bars)
-    if covid:
-        title = 'Feature importance - Lin Reg nowcast (including covid)'
-        plt.title(title)
-    else:
-        title = 'Feature importance - Lin Reg nowcast (pre-covid)'
-        plt.title(title)
-    plt.show()
+    plot_importance_features(model=lr_model, color='maroon', covid_features=covid_features,
+                             non_covid_features=non_covid_features, model_name='Lin Reg nowcast', coef=True,
+                             covid=covid)
 
     # GBR - get importance of each feature
-    fig, ax = plt.subplots()
-    importance = gbr_model.feature_importances_
-    # summarize feature importance
-    for i, v in enumerate(importance):
-        print('Feature: %0d, Score: %.5f' % (i, v))
-    # plot feature importance
-    if covid:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'weighted_ranking',
-                        'gdp_lag1', 'cinema_lockdown']
-    else:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'sentiment',
-                        'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='limegreen')
-    ax.bar_label(bars)
-    if covid:
-        title = 'Feature importance - GBR nowcast (including covid)'
-        plt.title(title)
-    else:
-        title = 'Feature importance - GBR Reg nowcast (pre-covid)'
-        plt.title(title)
-    plt.show()
-    plt.clf()
+    plot_importance_features(model=gbr_model, color='limegreen', covid_features=covid_features,
+                             non_covid_features=non_covid_features, model_name='GBR nowcast', coef=False,
+                             covid=covid)
 
     # RFR - get importance of each feature
-    fig, ax = plt.subplots()
-    importance = rfr_model.feature_importances_
-    # summarize feature importance
-    for i, v in enumerate(importance):
-        print('Feature: %0d, Score: %.5f' % (i, v))
-    # plot feature importance
-    if covid:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'weighted_ranking',
-                        'gdp_lag1', 'cinema_lockdown']
-    else:
-        feature_list = ['constant', 'monthly gross', 'frequency_cinemas_near_me', 'frequency_baftas',
-                        'average_temperature', 'sentiment',
-                        'weighted_ranking', 'gdp_lag1']
-    bars = ax.barh(feature_list, importance, color='gold')
-    ax.bar_label(bars)
-    if covid:
-        title = 'Feature importance - RFR nowcast (including covid)'
-        plt.title(title)
-    else:
-        title = 'Feature importance - RFR nowcast (pre-covid)'
-        plt.title(title)
-    plt.show()
-    plt.clf()
+    plot_importance_features(model=rfr_model, color='gold', covid_features=covid_features,
+                             non_covid_features=non_covid_features, model_name='RFR nowcast', coef=False,
+                             covid=covid)
 
-    # https://towardsdatascience.com/train-test-split-and-cross-validation-in-python-80b61beca4b6
-    x_test_full = x_test.reset_index().merge(y_with_date.reset_index(), how='inner', on='index')
-    x_test_full['y_pred_lr'] = model_train.predict(x_test_full.drop(columns=['date_grouped', 'gdp', 'index']))
-    y_pred = x_test_full['y_pred_lr'].to_numpy()
-    plt.scatter(y_test, y_pred)
-    plt.xlabel("True Values")
-    plt.ylabel("Predictions")
+    # Ridge - get importance of each feature
+    plot_importance_features(model=ridge_model_alpha_1, color='blue',covid_features=covid_features, coef=True,
+                             non_covid_features=non_covid_features, model_name='Ridge nowcast',
+                             covid=covid)
+
+    # Lasso - get importance of each feature
+    plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_features, coef=True,
+                             non_covid_features=non_covid_features, model_name='Lasso nowcast',
+                             covid=covid)
+
+    plt.clf()
 
     # Prepare nowcast graph:
+    # https://towardsdatascience.com/train-test-split-and-cross-validation-in-python-80b61beca4b6
+    x_test_full = x_test.reset_index().merge(y_with_date.reset_index(), how='inner', on='index')
     y_test_full = y_test.to_frame().reset_index().merge(y_with_date.reset_index(), how='inner', on='index')
-    # Plotting nowcast gdp vs actual gdp
-    plt.figure()
-    fig, ax = plt.subplots()
     y_test_full = y_test_full.sort_values('date_grouped')
     x_test_full = x_test_full.sort_values('date_grouped')
-    plt.plot(y_test_full['date_grouped'], y_test_full['gdp_x'], '-o', label="actual gdp", markersize=3)
-    plt.plot(x_test_full['date_grouped'], x_test_full['y_pred_lr'], '-o', label="linear regression", markersize=3, color='maroon')
-    plt.grid()
-    leg = plt.legend(loc='upper center')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    if covid:
-        plt.title('Nowcast test set - Linear Regression (including covid)')
-    else:
-        plt.title('Nowcast test set - Linear Regression (pre-covid)')
+    covid_nowcast = ['const', 'monthly_gross', 'frequency_cinemas_near_me',
+                     'frequency_baftas',
+                     'average_temperature', 'weighted_ranking',
+                     'gdp_lag1', 'cinema_lockdown']
+    non_covid_nowcast = ['const', 'monthly_gross', 'frequency_cinemas_near_me',
+                         'frequency_baftas',
+                         'average_temperature', 'sentiment',
+                         'weighted_ranking', 'gdp_lag1']
+    # LR nowcast
+    y_pred_lr = plot_nowcast(model=lr_model, x_test_full=x_test_full, y_test_full=y_test_full,
+                             covid_features=covid_nowcast,
+                             non_covid_features=non_covid_nowcast, color='maroon', model_label='linear regression',
+                             model_name='lr',
+                             covid=covid)
 
-    plt.clf()
+    # GBR nowcast
+    y_pred_gbr = plot_nowcast(model=gbr_model, x_test_full=x_test_full, y_test_full=y_test_full,
+                              covid_features=covid_nowcast,
+                              non_covid_features=non_covid_nowcast, color='limegreen',
+                              model_label='gradient boosting regression', model_name='gbr',
+                              covid=covid)
 
-
-    fig, ax = plt.subplots()
-    x_test_full['y_pred_gbr'] = gbr_model.predict(x_test_full.drop(columns=['date_grouped', 'gdp', 'index', 'y_pred_lr']))
-    y_pred_gbr = x_test_full['y_pred_gbr'].to_numpy()
-    plt.plot(y_test_full['date_grouped'], y_test_full['gdp_x'], '-o', label="actual gdp", markersize=3)
-    plt.plot(x_test_full['date_grouped'], x_test_full['y_pred_gbr'], '-o', label="gradient boosting regression", markersize=3, color='limegreen')
-    leg = plt.legend(loc='upper center')
-    plt.grid()
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    if covid:
-        plt.title('Nowcast test set - GBR (including covid)')
-    else:
-        plt.title('Nowcast test set - GBR (pre-covid)')
-    plt.show()
-
-    plt.clf()
-
-
-    fig, ax = plt.subplots()
-    x_test_full['y_pred_rfr'] = gbr_model.predict(
-        x_test_full.drop(columns=['date_grouped', 'gdp', 'index', 'y_pred_lr',  'y_pred_gbr']))
-    y_pred_rfr = x_test_full['y_pred_rfr'].to_numpy()
-
-    plt.plot(y_test_full['date_grouped'], y_test_full['gdp_x'], '-o', label="actual gdp", markersize=3)
-    plt.plot(x_test_full['date_grouped'], x_test_full['y_pred_rfr'], '-o', label="gradient boosting regression",
-             markersize=3, color='gold')
-    leg = plt.legend(loc='upper center')
-    plt.grid()
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    if covid:
-        plt.title('Nowcast test set - RFR (including covid)')
-    else:
-        plt.title('Nowcast test set - RFR (pre-covid)')
-    plt.show()
-
-    plt.clf()
+    # RFR nowcast
+    y_pred_rfr = plot_nowcast(model=rfr_model, x_test_full=x_test_full, y_test_full=y_test_full,
+                              covid_features=covid_nowcast,
+                              non_covid_features=non_covid_nowcast, color='gold',
+                              model_label='random forest regression', model_name='rfr',
+                              covid=covid)
 
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
-    rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred))
+    rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_lr))
 
     rmse_gbr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_gbr))
 
@@ -208,7 +148,7 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     # https://www.kaggle.com/code/jorgesandoval/xgboost-vs-lightgbm-using-diebold-mariano-test/notebook
     # DM-test - https://academic.oup.com/ej/pages/top_cited_papers
     # - https://medium.com/@philippetousignant/comparing-forecast-accuracy-in-python-diebold-mariano-test-ad109026f6ab#:~:text=In%20conclusion%2C%20the%20Diebold%2DMariano,when%20choosing%20a%20forecasting%20method.
-    dm_test = diebold_mariano_test(y_test, y_pred, y_pred_gbr, h=1, crit="MSE")
+    dm_test = diebold_mariano_test(y_test, y_pred_lr, y_pred_gbr, h=1, crit="MSE")
 
 
     # TODO - VAR test

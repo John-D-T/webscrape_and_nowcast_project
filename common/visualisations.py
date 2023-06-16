@@ -33,7 +33,7 @@ def plot_nowcast(model, x_test_full, y_test_full, covid_features, non_covid_feat
         x_test_full['y_pred_%s' % model_name] = model.predict(x_test_full[covid_features])
     else:
         x_test_full['y_pred_%s' % model_name] = model.predict(x_test_full[non_covid_features])
-    # TODO - refactor this
+
     y_pred = x_test_full['y_pred_%s' % model_name].to_numpy()
 
     plt.plot(y_test_full['date_grouped'], y_test_full['gdp_x'], '-o', label="actual gdp", markersize=3)

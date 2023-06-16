@@ -247,8 +247,7 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     '''
     Nowcasting model
     '''
-
-    nowcast_regression(x_ols, y, y_with_date, features)
+    nowcast_regression(merged_df, x_ols, y, y_with_date)
 
     return rows
 

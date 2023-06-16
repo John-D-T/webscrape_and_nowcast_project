@@ -3,15 +3,12 @@ from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
-from tabulate import tabulate
-from texttable import Texttable
-import latextable
 from common.latex_file_generator import save_table_as_latex
 from common.visualisations import plot_importance_features, plot_nowcast
+from statsmodels.tsa.stattools import grangercausalitytests
+import pandas as pd
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -25,7 +22,7 @@ pip install latextable
 """
 
 
-def nowcast_regression(X, Y, y_with_date, features, covid=False):
+def nowcast_regression(merged_df, X, Y, y_with_date, covid=False):
     """
     Function to nowcast, using machine learning techniques
     """
@@ -45,6 +42,19 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
     # higher the alpha value, more restriction on the coefficients; low alpha > more generalization,
 
+    var_model = VAR(df_differenced)
+    # To select the right order of the VAR model, we iteratively fit increasing orders of VAR model and pick the order that gives a model with least AIC.
+    for i in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+        result = var_model.fit(i)
+        print('Lag Order =', i)
+        print('AIC : ', result.aic)
+        print('BIC : ', result.bic)
+        print('FPE : ', result.fpe)
+        print('HQIC: ', result.hqic, '\n')
+
+    # TODO - Forecast the VAR
+
+    # TODO - Plot the forecast
 
     #forecaster_model = ForecasterAutoreg(regressor=regressor, lags=20)
     #TODO - ForecasterAutoreg - recursive forecasting - https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html
@@ -150,6 +160,7 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
                               model_label='lasso regression', model_name='lasso',
                               covid=covid)
 
+
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
     rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_lr))
@@ -173,12 +184,24 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     # https://www.machinelearningplus.com/time-series/vector-autoregression-examples-python/
     # https://www.analyticsvidhya.com/blog/2021/08/vector-autoregressive-model-in-python/
 
+    # TODO - Run a 'Grangers Causality Test' to see whether each time series influences each other, which is the basis for a VAR
+    merged_df = merged_df.set_index('date_grouped')
+    # statsmodels.tools.sm_exceptions.InfeasibleTestError: The Granger causality test statistic cannot be compute because the VAR has a perfect fit of the data.
+    granger_df = granger_casuality_test(data=merged_df, variables=merged_df.columns)
+
+    # ADF Test on each column
+    # TODO - Get ADF test working, which checks for stationarity (which is what we want)
+    # By the way, if a series is found to be non-stationary, you make it stationary by differencing the series once and repeat the test again until it becomes stationary.
+    for name, column in df_train.iteritems():
+        adfuller_test(column, name=column.name)
+        print('\n')
+
     # Generate Latex Table with all results
     rows = [['Model', 'train score', 'test score', 'RMSE'],
             ['LR', train_score_ols, test_score_ols, rmse_lr],
             ['GBR', train_score_gbr, test_score_gbr, rmse_gbr],
             ['RFR', train_score_rfr, test_score_rfr, rmse_rfr],
-            ['Ridge', train_score_ridge, test_score_ridge, rmse_ridge]
+            ['Ridge', train_score_ridge, test_score_ridge, rmse_ridge],
             ['Lasso', train_score_lasso, test_score_lasso, rmse_lasso]
             # ['VAR', 'ESA', '21', '2002']]
             ]
@@ -188,3 +211,53 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     else:
         save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='model_comparison_pre_covid', rows=rows, header_count=4)
 
+
+def granger_casuality_test(data, variables, verbose=True):
+
+    maxlag = 12
+    test = 'ssr_chi2test'
+    """Check Granger Causality of all possible combinations of the Time series.
+    The rows are the response variable, columns are predictors. The values in the table 
+    are the P-Values. P-Values lesser than the significance level (0.05), implies 
+    the Null Hypothesis that the coefficients of the corresponding past values is 
+    zero, that is, the X does not cause Y can be rejected.
+
+    data      : pandas dataframe containing the time series variables
+    variables : list containing names of the time series variables.
+    """
+    df = pd.DataFrame(np.zeros((len(variables), len(variables))), columns=variables, index=variables)
+    for c in df.columns:
+        for r in df.index:
+            test_result = grangercausalitytests(data[[r, c]], maxlag=maxlag, verbose=False)
+            p_values = [round(test_result[i + 1][0][test][1], 4) for i in range(maxlag)]
+            # if verbose:
+            #     print(f'Y = {r}, X = {c}, P Values = {p_values}')
+            min_p_value = np.min(p_values)
+            df.loc[r, c] = min_p_value
+    df.columns = [var + '_x' for var in variables]
+    df.index = [var + '_y' for var in variables]
+    return df
+
+def adfuller_test(series, signif=0.05, name='', verbose=False):
+    """Perform ADFuller to test for Stationarity of given series and print report"""
+    r = adfuller(series, autolag='AIC')
+    output = {'test_statistic':round(r[0], 4), 'pvalue':round(r[1], 4), 'n_lags':round(r[2], 4), 'n_obs':r[3]}
+    p_value = output['pvalue']
+    def adjust(val, length= 6): return str(val).ljust(length)
+
+    # Print Summary
+    print(f'    Augmented Dickey-Fuller Test on "{name}"', "\n   ", '-'*47)
+    print(f' Null Hypothesis: Data has unit root. Non-Stationary.')
+    print(f' Significance Level    = {signif}')
+    print(f' Test Statistic        = {output["test_statistic"]}')
+    print(f' No. Lags Chosen       = {output["n_lags"]}')
+
+    for key,val in r[4].items():
+        print(f' Critical value {adjust(key)} = {round(val, 3)}')
+
+    if p_value <= signif:
+        print(f" => P-Value = {p_value}. Rejecting Null Hypothesis.")
+        print(f" => Series is Stationary.")
+    else:
+        print(f" => P-Value = {p_value}. Weak evidence to reject the Null Hypothesis.")
+        print(f" => Series is Non-Stationary.")

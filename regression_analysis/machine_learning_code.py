@@ -6,8 +6,9 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from common.latex_file_generator import save_table_as_latex
-from common.visualisations import plot_importance_features, plot_nowcast
+from common.visualisations import plot_importance_features, plot_nowcast, plot_var_nowcast
 from statsmodels.tsa.stattools import grangercausalitytests
+from statsmodels.tsa.api import VAR
 import pandas as pd
 
 # Metrics
@@ -22,7 +23,7 @@ pip install latextable
 """
 
 
-def nowcast_regression(merged_df, X, Y, y_with_date, covid=False):
+def nowcast_regression(var_df, X, Y, y_with_date, covid=False):
     """
     Function to nowcast, using machine learning techniques
     """
@@ -41,20 +42,19 @@ def nowcast_regression(merged_df, X, Y, y_with_date, covid=False):
     ridge_model_alpha_1 = Ridge(alpha=1).fit(x_train, y_train)
     lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
     # higher the alpha value, more restriction on the coefficients; low alpha > more generalization,
+    var = VAR(var_df)
+    x = var.select_order()
+    # An asterix indicates the right order of the VAR model. More specifically, we're choosing the optimal lag that
+    # minimizes AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) out-of-sample error prediction
+    print(x.summary())
 
-    var_model = VAR(df_differenced)
-    # To select the right order of the VAR model, we iteratively fit increasing orders of VAR model and pick the order that gives a model with least AIC.
-    for i in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
-        result = var_model.fit(i)
-        print('Lag Order =', i)
-        print('AIC : ', result.aic)
-        print('BIC : ', result.bic)
-        print('FPE : ', result.fpe)
-        print('HQIC: ', result.hqic, '\n')
+    var_model = var.fit(1)
+    # TODO - work on this function
+    plot_var_nowcast(var_model=var_model, var_df=var_df)
+    var_df = var_df.set_index('date_grouped')
 
-    # TODO - Forecast the VAR
-
-    # TODO - Plot the forecast
+    # statsmodels.tools.sm_exceptions.InfeasibleTestError: The Granger causality test statistic cannot be compute because the VAR has a perfect fit of the data.
+    granger_df = granger_casuality_test(data=var_df, variables=var_df.columns)
 
     #forecaster_model = ForecasterAutoreg(regressor=regressor, lags=20)
     #TODO - ForecasterAutoreg - recursive forecasting - https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html

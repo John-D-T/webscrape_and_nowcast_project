@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def plot_importance_features(model, color, covid_features, non_covid_features, model_name, coef, covid=False):
@@ -49,6 +50,29 @@ def plot_nowcast(model, x_test_full, y_test_full, covid_features, non_covid_feat
     plt.show()
 
     return y_pred
+
+def plot_var_nowcast(var_model, var_df):
+    # TODO - Plot the forecast for just GDP -
+    # https://taufik-azri.medium.com/forecasting-through-economic-uncertainty-multivariable-time-series-analysis-with-var-and-prophet-e6b801962acb
+    # https://github.com/fickaz/time-series-for-business/blob/master/Forecasting.ipynb
+
+    # Plots all points
+    var_model.plot()
+    var_model.plot_forecast(20)
+
+    # Get the lag order
+    lag_order = var_model.k_ar
+    print(lag_order)
+    # Separate input data for forecasting
+    # the goal is to forecast based on the last 4 inputs (since the lag is 4)
+    forecast_input = var_df.values[-lag_order:]
+    # Forecast
+    # We insert the last four values and inform the model to predict the next 10 values
+    fc = var_model.forecast(y=forecast_input, steps=nobs)
+    # organize the output into a clear DataFrame layout, add ‘_f’ suffix # at each column indicating they are the forecasted values
+    df_forecast = pd.DataFrame(fc, index=tsdf.index[-nobs:], columns=tsdf.columns + ‘_f’)
+
+
 
 
 if __name__ == '__main__':

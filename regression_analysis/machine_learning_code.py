@@ -136,6 +136,20 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
                               model_label='random forest regression', model_name='rfr',
                               covid=covid)
 
+    # Ridge nowcast
+    y_pred_ridge = plot_nowcast(model=ridge_model_alpha_1, x_test_full=x_test_full, y_test_full=y_test_full,
+                              covid_features=covid_nowcast,
+                              non_covid_features=non_covid_nowcast, color='blue',
+                              model_label='ridge regression', model_name='ridge',
+                              covid=covid)
+
+    # Lasso nowcast
+    y_pred_lasso = plot_nowcast(model=lasso_model_alpha_1, x_test_full=x_test_full, y_test_full=y_test_full,
+                              covid_features=covid_nowcast,
+                              non_covid_features=non_covid_nowcast, color='black',
+                              model_label='lasso regression', model_name='lasso',
+                              covid=covid)
+
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
     rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_lr))
@@ -144,7 +158,11 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
 
     rmse_rfr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_rfr))
 
-    # Calculating DM-test (Diebold-Mariano Test) to compare models
+    rmse_lasso = np.sqrt(metrics.mean_squared_error(y_test, y_pred_lasso))
+
+    rmse_ridge = np.sqrt(metrics.mean_squared_error(y_test, y_pred_ridge))
+
+    # TODO - figure out calculating DM-test (Diebold-Mariano Test) to compare models
     # https://www.kaggle.com/code/jorgesandoval/xgboost-vs-lightgbm-using-diebold-mariano-test/notebook
     # DM-test - https://academic.oup.com/ej/pages/top_cited_papers
     # - https://medium.com/@philippetousignant/comparing-forecast-accuracy-in-python-diebold-mariano-test-ad109026f6ab#:~:text=In%20conclusion%2C%20the%20Diebold%2DMariano,when%20choosing%20a%20forecasting%20method.
@@ -159,8 +177,11 @@ def nowcast_regression(X, Y, y_with_date, features, covid=False):
     rows = [['Model', 'train score', 'test score', 'RMSE'],
             ['LR', train_score_ols, test_score_ols, rmse_lr],
             ['GBR', train_score_gbr, test_score_gbr, rmse_gbr],
-            ['RFR', train_score_rfr, test_score_rfr, rmse_rfr]]
-            #['VAR', 'ESA', '21', '2002']]
+            ['RFR', train_score_rfr, test_score_rfr, rmse_rfr],
+            ['Ridge', train_score_ridge, test_score_ridge, rmse_ridge]
+            ['Lasso', train_score_lasso, test_score_lasso, rmse_lasso]
+            # ['VAR', 'ESA', '21', '2002']]
+            ]
 
     if covid:
         save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='model_comparison_incl_covid', rows=rows, header_count=4)

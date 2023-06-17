@@ -139,9 +139,6 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
-    # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
-    # merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
-
     # Set the cutoff date, based on when covid started in the UK
     cutoff_date = pd.to_datetime('2020-02-01')
 
@@ -159,19 +156,12 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
     features.append('gdp_lag1')
 
-    # TODO - leave out 2SLS until I can think of an instrument variable
-    # X_2SLS = merged_df[['ranking_discrepancy_rank_1_to_15',
-    #                'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment', 'frequency_baftas']]
-    # X_Z_2SLS = merged_df['monthly gross']
-
     x_ols = merged_df[features]
     y = merged_df['gdp']
     y_with_date = merged_df[['gdp', 'date_grouped']]
-    # Z = merged_df['frequency academy awards']
 
 
     x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
-    # X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
@@ -183,11 +173,6 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # Leaving this out as we're going for a nowcast
     # # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
     # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
-
-    # TODO - leave out until I can think of an instrument variable
-    # resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
-    #
-    # save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
 
     '''
     Now checking residuals

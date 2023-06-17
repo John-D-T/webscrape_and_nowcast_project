@@ -113,22 +113,20 @@ def generate_wordcloud(df):
     # positive_text = ' '.join(positive_text_list)
     # negative_text = ' '.join(negative_text_list)
     # change the value to black
-    def black_color_func(word, font_size):
+    def black_color_func(word, font_size, position, orientation, random_state=None, **kwargs):
         return ("hsl(0,100%, 1%)")
 
     # Plotting the image
-    # TODO - fix colormap
     mask = np.array(Image.open(os.path.join(os.getcwd(), 'film_icon.PNG')))
     wordcloud = WordCloud(mask=mask, background_color="white", width=3000,
-                          height=2000, max_words=500, colormap='k').generate(' '.join(df.plain_text))
+                          height=2000, max_words=500).generate(' '.join(df.plain_text))
     # set the word color to black
-    # wordcloud.recolor(color_func=black_color_func)
+    wordcloud.recolor(color_func = black_color_func)
     plt.figure(figsize=[15, 10])
     # plot the wordcloud
     plt.imshow(wordcloud, interpolation="bilinear")
     # remove plot axes
     plt.axis("off")
-
 
 if __name__ == '__main__':
     df = pd.read_csv(os.path.join(os.getcwd(), 'compiled_tweets_odeon.csv'))

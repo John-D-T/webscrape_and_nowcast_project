@@ -8,7 +8,6 @@ from sklearn.ensemble import RandomForestRegressor
 from common.latex_file_generator import save_table_as_latex
 from common.visualisations import plot_importance_features, plot_nowcast, plot_var_nowcast
 from statsmodels.tsa.stattools import grangercausalitytests
-from statsmodels.tsa.api import VAR
 import pandas as pd
 
 # Metrics
@@ -30,6 +29,7 @@ def nowcast_regression(var_df, X, Y, y_with_date, covid=False):
     y = Y.to_numpy()
 
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.5, random_state=100)
+    var_train, var_test = train_test_split(var_df, test_size=0.3, shuffle=False)
 
     # Seeing the split across training and testing datasets
     print('Number of records in the original dataset: ', len(y))
@@ -42,19 +42,9 @@ def nowcast_regression(var_df, X, Y, y_with_date, covid=False):
     ridge_model_alpha_1 = Ridge(alpha=1).fit(x_train, y_train)
     lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
     # higher the alpha value, more restriction on the coefficients; low alpha > more generalization,
-    var = VAR(var_df)
-    x = var.select_order()
-    # An asterix indicates the right order of the VAR model. More specifically, we're choosing the optimal lag that
-    # minimizes AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) out-of-sample error prediction
-    print(x.summary())
 
-    var_model = var.fit(1)
-    # TODO - work on this function
-    plot_var_nowcast(var_model=var_model, var_df=var_df)
+    var_variable = plot_var_nowcast(var_df=var_df, var_train=var_train, var_test=var_test)
     var_df = var_df.set_index('date_grouped')
-
-    # statsmodels.tools.sm_exceptions.InfeasibleTestError: The Granger causality test statistic cannot be compute because the VAR has a perfect fit of the data.
-    granger_df = granger_casuality_test(data=var_df, variables=var_df.columns)
 
     #forecaster_model = ForecasterAutoreg(regressor=regressor, lags=20)
     #TODO - ForecasterAutoreg - recursive forecasting - https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html
@@ -184,11 +174,6 @@ def nowcast_regression(var_df, X, Y, y_with_date, covid=False):
     # https://www.machinelearningplus.com/time-series/vector-autoregression-examples-python/
     # https://www.analyticsvidhya.com/blog/2021/08/vector-autoregressive-model-in-python/
 
-    # TODO - Run a 'Grangers Causality Test' to see whether each time series influences each other, which is the basis for a VAR
-    merged_df = merged_df.set_index('date_grouped')
-    # statsmodels.tools.sm_exceptions.InfeasibleTestError: The Granger causality test statistic cannot be compute because the VAR has a perfect fit of the data.
-    granger_df = granger_casuality_test(data=merged_df, variables=merged_df.columns)
-
     # ADF Test on each column
     # TODO - Get ADF test working, which checks for stationarity (which is what we want)
     # By the way, if a series is found to be non-stationary, you make it stationary by differencing the series once and repeat the test again until it becomes stationary.
@@ -211,53 +196,3 @@ def nowcast_regression(var_df, X, Y, y_with_date, covid=False):
     else:
         save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='model_comparison_pre_covid', rows=rows, header_count=4)
 
-
-def granger_casuality_test(data, variables, verbose=True):
-
-    maxlag = 12
-    test = 'ssr_chi2test'
-    """Check Granger Causality of all possible combinations of the Time series.
-    The rows are the response variable, columns are predictors. The values in the table 
-    are the P-Values. P-Values lesser than the significance level (0.05), implies 
-    the Null Hypothesis that the coefficients of the corresponding past values is 
-    zero, that is, the X does not cause Y can be rejected.
-
-    data      : pandas dataframe containing the time series variables
-    variables : list containing names of the time series variables.
-    """
-    df = pd.DataFrame(np.zeros((len(variables), len(variables))), columns=variables, index=variables)
-    for c in df.columns:
-        for r in df.index:
-            test_result = grangercausalitytests(data[[r, c]], maxlag=maxlag, verbose=False)
-            p_values = [round(test_result[i + 1][0][test][1], 4) for i in range(maxlag)]
-            # if verbose:
-            #     print(f'Y = {r}, X = {c}, P Values = {p_values}')
-            min_p_value = np.min(p_values)
-            df.loc[r, c] = min_p_value
-    df.columns = [var + '_x' for var in variables]
-    df.index = [var + '_y' for var in variables]
-    return df
-
-def adfuller_test(series, signif=0.05, name='', verbose=False):
-    """Perform ADFuller to test for Stationarity of given series and print report"""
-    r = adfuller(series, autolag='AIC')
-    output = {'test_statistic':round(r[0], 4), 'pvalue':round(r[1], 4), 'n_lags':round(r[2], 4), 'n_obs':r[3]}
-    p_value = output['pvalue']
-    def adjust(val, length= 6): return str(val).ljust(length)
-
-    # Print Summary
-    print(f'    Augmented Dickey-Fuller Test on "{name}"', "\n   ", '-'*47)
-    print(f' Null Hypothesis: Data has unit root. Non-Stationary.')
-    print(f' Significance Level    = {signif}')
-    print(f' Test Statistic        = {output["test_statistic"]}')
-    print(f' No. Lags Chosen       = {output["n_lags"]}')
-
-    for key,val in r[4].items():
-        print(f' Critical value {adjust(key)} = {round(val, 3)}')
-
-    if p_value <= signif:
-        print(f" => P-Value = {p_value}. Rejecting Null Hypothesis.")
-        print(f" => Series is Stationary.")
-    else:
-        print(f" => P-Value = {p_value}. Weak evidence to reject the Null Hypothesis.")
-        print(f" => Series is Non-Stationary.")

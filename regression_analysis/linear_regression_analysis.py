@@ -159,10 +159,6 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
     features.append('gdp_lag1')
 
-    var_variables = features
-    var_variables.append('gdp')
-    var_df = merged_df[var_variables]
-
     # TODO - leave out 2SLS until I can think of an instrument variable
     # X_2SLS = merged_df[['ranking_discrepancy_rank_1_to_15',
     #                'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment', 'frequency_baftas']]
@@ -249,6 +245,10 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     '''
     Nowcasting model
     '''
+    var_variables = features
+    var_variables.append('gdp')
+    var_df = merged_df[var_variables]
+    var_variables.append('date_grouped')
     nowcast_regression(var_df, x_ols, y, y_with_date)
 
     return rows

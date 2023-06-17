@@ -55,6 +55,7 @@ def plot_nowcast(model, x_test_full, y_test_full, covid_features, non_covid_feat
     return y_pred
 
 def plot_var_nowcast(var_df, var_train, var_test):
+    # TODO - remove gdp lag1 from everything!!!
     # https://taufik-azri.medium.com/forecasting-through-economic-uncertainty-multivariable-time-series-analysis-with-var-and-prophet-e6b801962acb
     # https://github.com/fickaz/time-series-for-business/blob/master/Forecasting.ipynb
 
@@ -72,60 +73,115 @@ def plot_var_nowcast(var_df, var_train, var_test):
 
 
     var_model = VAR(df_differenced)
-    x = var_model.select_order(maxlags=8)
+    # x = var_model.select_order(maxlags=9)
+    x = var_model.select_order()
     x.summary()
     nobs = len(df_differenced.index)
     # An asterix indicates the right order of the VAR model. More specifically, we're choosing the optimal lag that minimizes AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) out-of-sample error prediction
     print(x.summary())
+    # It appears the optimal lag structure is 3, with the most minimums (using the last 3 month's GDP data when determining next month's GDP)
     var_model_fitted = var_model.fit(3)
+    var_model_fitted.summary()
 
-    # Get the lag order
+    # https://cprosenjit.medium.com/multivariate-time-series-forecasting-using-vector-autoregression-3e5c9b85e42a
+    forecastingPeriod = 12
+
+    # Fetch the lag order
     lag_order = var_model_fitted.k_ar
+    # Produce forecasts for desired number of steps ahead
+    predictions = var_model_fitted \
+        .forecast(df_differenced.values[-lag_order:], forecastingPeriod)
+    # Converts NumPy multidimensional array into Pandas DataFrame
+    predictions_df = pd.DataFrame(predictions)
+    # Assign the column headers
+    # TODO - might need to edit this for covid
+    predictions_df.columns = \
+        ['monthly_gross',
+         # TODO - remove gdp_lag1
+         # 'gdp_lag1',
+         'weighted_ranking',
+         'sentiment',
+         'average_temperature',
+         'frequency_baftas',
+         'frequency_cinemas_near_me',
+         'constant',
+         'gdp'
+         ]
+    gdp_var_prediction_df = predictions_df['gdp']
+    gdp_var_prediction_df
 
-    # Separate input data for forecasting
-    # the goal is to forecast based on the last 4 inputs (since the lag is 4)
-    forecast_input = df_differenced.values[-lag_order:]
-    # Forecast
-    ## we insert the last four values and inform the model to predict the next 10 values
+    # Organize by date
+    prediction_start_month = \
+        (var_train["date_grouped"].iloc[-1] +
+         pd.DateOffset(months=1)) \
+            .strftime('%Y-%m-%d')
+    # Create a DateTimeIndex
+    prediction_date_range = pd.date_range(
+        prediction_start_month,
+        periods=forecastingPeriod,
+        freq='MS')
+    # Assign the DateTimeIndex as DataFrame index
+    gdp_var_prediction_df.index = prediction_date_range
+    gdp_var_prediction_df
 
-    fc = var_model_fitted.forecast(y=forecast_input, steps=nobs)
+    # Plotting VAR forecast
+    plt.figure(figsize=(14, 8))
+    # Plotting the Actuals
+    plt.plot(df_differenced.index, df_differenced.gdp, label='Actuals')
+    # Plotting the Forecasts
+    plt.plot(gdp_var_prediction_df.index, gdp_var_prediction_df, label='Forecasts')
+    plt.legend(loc='best')
+    plt.title("VAR title TBD - Forecasting")
+    plt.show()
 
-    ## organize the output into a clear DataFrame layout, add '_f' suffix at each column indicating they are the forecasted values
-    df_forecast = pd.DataFrame(fc, index=var_df.index[-nobs:], columns=var_df.columns + '_f')
-    df_forecast
 
-    # get a copy of the forecast
-    df_fc = df_forecast.copy()
-
-    # get column name from the original dataframe
-    columns = var_train.columns
-
-    # Roll back from the 1st order differencing
-    # we take the cumulative sum (from the top row to the bottom) for each of the forecasting data,
-    ## and the add to the previous step's original value (since we deduct each row from the previous one)
-    ## we rename the new forecasted column with the prefix 'forecast'
-
-    for col in columns:
-        df_fc[str(col) +'_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) +'_f'].cumsum()
-
-    ## if you perform second order diff, make sure to get the difference from the last row and second last row of df_train
-    for col in columns:
-        df_fc[str(col) + '_first_differenced'] = (var_train[col].iloc[-1] - var_train[col].iloc[-2]) + df_fc[
-            str(col) + '_f'].cumsum()
-        df_fc[str(col) + '_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) + '_first_differenced'].cumsum()
-    df_results = df_fc
-
-    # Plotting forecast (WIP) - for some reason gdp keeps going up, all the way to 600.
-    # TODO - fix this. It's because we're basing all forecasts on the first 3 GDP values. Of course it's going to not have any bumps/fluctuations
-    # TODO - check https://medium.com/mlearning-ai/how-i-used-statsmodels-vector-autoregression-var-to-forecast-on-multivariate-training-data-fc867eb6de8b
-    fig = var_model_fitted.plot_forecast(10)
-    fig, ax = plt.subplots()
-
-    var_test.reset_index()['gdp'].plot(color='k', label='Actual')
-    df_results.reset_index()['gdp_forecast'].plot(color='r', label='Predicted')
-
-    plt.title('VAR Model: Title TBD')
-    ax.legend()
+    # # Get the lag order
+    # lag_order = var_model_fitted.k_ar
+    #
+    # # Separate input data for forecasting
+    # # the goal is to forecast based on the last 4 inputs (since the lag is 4)
+    # forecast_input = df_differenced.values[-lag_order:]
+    # # Forecast
+    # ## we insert the last four values and inform the model to predict the next 10 values
+    #
+    # fc = var_model_fitted.forecast(y=forecast_input, steps=nobs)
+    #
+    # ## organize the output into a clear DataFrame layout, add '_f' suffix at each column indicating they are the forecasted values
+    # df_forecast = pd.DataFrame(fc, index=var_df.index[-nobs:], columns=var_df.columns + '_f')
+    # df_forecast
+    #
+    # # get a copy of the forecast
+    # df_fc = df_forecast.copy()
+    #
+    # # get column name from the original dataframe
+    # columns = var_train.columns
+    #
+    # # Roll back from the 1st order differencing
+    # # we take the cumulative sum (from the top row to the bottom) for each of the forecasting data,
+    # ## and the add to the previous step's original value (since we deduct each row from the previous one)
+    # ## we rename the new forecasted column with the prefix 'forecast'
+    #
+    # for col in columns:
+    #     df_fc[str(col) +'_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) +'_f'].cumsum()
+    #
+    # ## if you perform second order diff, make sure to get the difference from the last row and second last row of df_train
+    # for col in columns:
+    #     df_fc[str(col) + '_first_differenced'] = (var_train[col].iloc[-1] - var_train[col].iloc[-2]) + df_fc[
+    #         str(col) + '_f'].cumsum()
+    #     df_fc[str(col) + '_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) + '_first_differenced'].cumsum()
+    # df_results = df_fc
+    #
+    # # Plotting forecast (WIP) - for some reason gdp keeps going up, all the way to 600.
+    # # TODO - fix this. It's because we're basing all forecasts on the first 3 GDP values. Of course it's going to not have any bumps/fluctuations
+    # # TODO - check https://medium.com/mlearning-ai/how-i-used-statsmodels-vector-autoregression-var-to-forecast-on-multivariate-training-data-fc867eb6de8b
+    # fig = var_model_fitted.plot_forecast(10)
+    # fig, ax = plt.subplots()
+    #
+    # var_test.reset_index()['gdp'].plot(color='k', label='Actual')
+    # df_results.reset_index()['gdp_forecast'].plot(color='r', label='Predicted')
+    #
+    # plt.title('VAR Model: Title TBD')
+    # ax.legend()
 
     return ''
 

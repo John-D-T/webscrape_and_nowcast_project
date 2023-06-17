@@ -105,6 +105,9 @@ def plot_var_nowcast(var_df, var_train, var_test):
     ## and the add to the previous step's original value (since we deduct each row from the previous one)
     ## we rename the new forecasted column with the prefix 'forecast'
 
+    for col in columns:
+        df_fc[str(col) +'_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) +'_f'].cumsum()
+
     ## if you perform second order diff, make sure to get the difference from the last row and second last row of df_train
     for col in columns:
         df_fc[str(col) + '_first_differenced'] = (var_train[col].iloc[-1] - var_train[col].iloc[-2]) + df_fc[
@@ -112,7 +115,9 @@ def plot_var_nowcast(var_df, var_train, var_test):
         df_fc[str(col) + '_forecast'] = var_train[col].iloc[-1] + df_fc[str(col) + '_first_differenced'].cumsum()
     df_results = df_fc
 
-    # Plotting forecast (WIP) - for some reason gdp keeps going up, all the way to 600
+    # Plotting forecast (WIP) - for some reason gdp keeps going up, all the way to 600.
+    # TODO - fix this. It's because we're basing all forecasts on the first 3 GDP values. Of course it's going to not have any bumps/fluctuations
+    # TODO - check https://medium.com/mlearning-ai/how-i-used-statsmodels-vector-autoregression-var-to-forecast-on-multivariate-training-data-fc867eb6de8b
     fig = var_model_fitted.plot_forecast(10)
     fig, ax = plt.subplots()
 

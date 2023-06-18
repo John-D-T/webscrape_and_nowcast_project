@@ -188,12 +188,13 @@ def nowcast_regression_revamped(x, y, y_with_date):
     """
     Function to nowcast, using machine learning techniques
     """
-    covid_nowcast_features = ['const', 'monthly_gross', 'frequency_cinemas_near_me',
+    # TODO - see if I need to add 'const' back
+    covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                      'frequency_baftas',
                      'average_temperature', 'weighted_ranking',
                      'gdp_lag1', 'cinema_lockdown']
     # TODO - incoporate_logic to handle this
-    non_covid_nowcast_features = ['const', 'monthly_gross', 'frequency_cinemas_near_me',
+    non_covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                          'frequency_baftas',
                          'average_temperature', 'sentiment',
                          'weighted_ranking', 'gdp_lag1']
@@ -201,10 +202,12 @@ def nowcast_regression_revamped(x, y, y_with_date):
     pred_lr_list = []
     pred_gbr_list = []
     pred_rfr_list = []
-    pred_lasso_list = []
-    pred_ridge_list = []
+    pred_lasso_1_list = []
+    pred_ridge_1_list = []
+    pred_lasso_01_list = []
+    pred_ridge_01_list = []
     pred_var_list = []
-    list_of_models = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_list, pred_ridge_list, pred_var_list]
+    list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_list, pred_ridge_list, pred_var_list]
 
     # TODO - create a loop to iteratively generate a prediction df
     # TODO - loop through each time - going over the last 5 years
@@ -214,13 +217,14 @@ def nowcast_regression_revamped(x, y, y_with_date):
         if x.iloc[i]['date_grouped'] > pd.to_datetime('2020-02-01'):
             # TODO - will also need to add lockdown dummy?
             x = x.drop['sentiment']
-            features = non_covid_nowcast_features
-        else:
             features = covid_nowcast_features
+        else:
+            features = non_covid_nowcast_features
         # Training using the 48 months (4 years) before then)
-        x_train = x.iloc[i-48:i]
-        y_train = y.iloc[i-48:i]
-        x_test = x.iloc[i]
+        # Dropping date grouped column to avoid error in .fit() - TypeError: The DType <class 'numpy.dtype[datetime64]'> could not be promoted by <class 'numpy.dtype[float64]'>
+        x_train = x.iloc[i-48:i].drop(columns=['date_grouped'])
+        y_train = y.iloc[i-48:i].drop(columns=['date_grouped'])
+        x_test = x.iloc[[i]]
         y_test = y.iloc[i]
 
         lr_model = LinearRegression().fit(x_train, y_train)
@@ -228,64 +232,49 @@ def nowcast_regression_revamped(x, y, y_with_date):
         rfr_model = RandomForestRegressor(random_state=0).fit(x_train, y_train)
         ridge_model_alpha_1 = Ridge(alpha=1).fit(x_train, y_train)
         lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
+        # TODO - what does this mean: Ill-conditioned matrix (rcond=1.38778e-17): result may not be accurate.
         ridge_model_alpha_01 = Ridge(alpha=0.1).fit(x_train, y_train)
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
+        list_of_models = [lr_model, gbr_model, rfr_model, ridge_model_alpha_1, lasso_model_alpha_1, ridge_model_alpha_01, ridge_model_alpha_01]
 
-        # TODO - loop through each model
-        for y in list_of_models:
-            # TODO - append prediction to each relevant dataframe
-            x_test['y_pred_%s' % lr_model] = lr_model.predict(x_test[features])
-            # TODO Append this predicted value - date pair into a list?
-
-
-
-        # TODO - limit this to only certain loops, so as to not create too many figures
-
-        # covid_features = ['constant', 'monthly gross', 'frequency_cinemas_near_me',
-        #                                          'frequency_baftas',
-        #                                          'average_temperature', 'weighted_ranking',
-        #                                          'gdp_lag1', 'cinema_lockdown']
-        # non_covid_features = ['constant', 'monthly gross', 'frequency_cinemas_near_me',
-        #                       'frequency_baftas',
-        #                       'average_temperature', 'sentiment',
-        #                       'weighted_ranking', 'gdp_lag1']
-        # # Lin Reg - get importance of each feature
-        # plot_importance_features(model=lr_model, color='maroon', covid_features=covid_features,
-        #                          non_covid_features=non_covid_features, model_name='Lin Reg nowcast', coef=True,
-        #                          covid=covid)
-        #
-        # # GBR - get importance of each feature
-        # plot_importance_features(model=gbr_model, color='limegreen', covid_features=covid_features,
-        #                          non_covid_features=non_covid_features, model_name='GBR nowcast', coef=False,
-        #                          covid=covid)
-        #
-        # # RFR - get importance of each feature
-        # plot_importance_features(model=rfr_model, color='gold', covid_features=covid_features,
-        #                          non_covid_features=non_covid_features, model_name='RFR nowcast', coef=False,
-        #                          covid=covid)
-        #
-        # # Ridge - get importance of each feature
-        # plot_importance_features(model=ridge_model_alpha_1, color='blue',covid_features=covid_features, coef=True,
-        #                          non_covid_features=non_covid_features, model_name='Ridge nowcast',
-        #                          covid=covid)
-        #
-        # # Lasso - get importance of each feature
-        # plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_features, coef=True,
-        #                          non_covid_features=non_covid_features, model_name='Lasso nowcast',
-        #                          covid=covid)
+        # Loop through each model
+        for a, b in zip(list_of_predictors, list_of_models):
+            # Append prediction to each relevant dataframe
+            x_test['y_pred'] = b.predict(x_test[features])
+            # Append this predicted value - date pair into a list
+            predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
+            a.append(predicted_value)
 
     # TODO - pass newly created lists into empty dfs:
-    pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp_lr'))
-    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp_gbr'))
-    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp_rfr'))
-    pred_lasso_df = pd.DataFrame(data=pred_lasso_list, columns=('date_grouped', 'pred_gdp_lasso'))
-    pred_ridge_df = pd.DataFrame(data=pred_ridge_list, columns=('date_grouped', 'pred_gdp_ridge'))
-    pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp_var'))
+    pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lr'})
+    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp'))
+    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp'))
+    pred_lasso_1_df = pd.DataFrame(data=pred_lasso_1_list, columns=('date_grouped', 'pred_gdp'))
+    pred_lasso_01_df = pd.DataFrame(data=pred_lasso_01_list, columns=('date_grouped', 'pred_gdp'))
+    pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp'))
+    pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp'))
+    pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp'))
 
+    # TODO - group all dfs to pass into nowcast plot
+    complete_df = pd.merge(pred_lr_df, pred_gbr_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_gbr_list, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_rfr_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_lasso_1_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_lasso_01_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_ridge_1_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_ridge_01_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
+
+
+    # TODO - merge with y_with_date
+    complete_df = pd.merge(complete_df, y_with_date, on=['date_grouped'])
 
     # TODO - derived column of %differential between gdp and predicted gdp. For all models
-    # TODO - group all dfs to pass into nowcast plot
+    complete_df['lr_pct_difference'] = (complete_df['pred_gdp'] - complete_df['gdp']) / complete_df['pred_gdp']
+    # TODO - do for rest of models
+
+
     # TODO - Plot nowcast graph at the end of the loop
     # plot_nowcast(model=lr_model, x_test_full=x_test_full, y_test_full=y_test_full,
     #                          covid_features=covid_nowcast_features,
@@ -297,9 +286,13 @@ def nowcast_regression_revamped(x, y, y_with_date):
 
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
-    # TODO - get y_pred_lr LIST from pred_lr_df DATAFRAME
+    # Get y_pred_lr LIST from pred_lr_df DATAFRAME
+    y_pred_lr = pred_lr_df['pred_gdp'].values.tolist()
+    # TODO - do this for other models
+
+
     # TODO - create a custom y_test to cover the date range y_pred_lr covered
-    y_pred_lr = []
+    y_test = ''
     rmse_lr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_lr))
 
     rmse_gbr = np.sqrt(metrics.mean_squared_error(y_test, y_pred_gbr))
@@ -327,6 +320,7 @@ def nowcast_regression_revamped(x, y, y_with_date):
             # ['VAR', 'ESA', '21', '2002']]
             ]
 
+    # TODO - add some feature importance capture later
     if covid:
         save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='nowcast_model_comparison_incl_covid', rows=rows, header_count=4)
     else:

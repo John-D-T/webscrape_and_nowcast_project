@@ -237,7 +237,7 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     var_variables.append('date_grouped')
     var_df = merged_df[var_variables]
     # nowcast_regression(var_df, x_ols, y, y_with_date)
-    nowcast_regression_revamped(x_ols_alt, y, y_with_date)
+    nowcast_regression_revamped(var_df, x_ols_alt, y, y_with_date)
 
     return rows
 

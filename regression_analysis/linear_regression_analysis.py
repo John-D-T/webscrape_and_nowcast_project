@@ -19,7 +19,7 @@ from common.latex_file_generator import save_table_as_latex
 
 from common import constants as c
 from common.latex_file_generator import save_model_as_image
-from regression_analysis.machine_learning_code import nowcast_regression
+from regression_analysis.machine_learning_code import nowcast_regression, nowcast_regression_revamped
 from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
 from twitter_scraper.sentiment_analysis_on_tweets import sentiment_analysis
 
@@ -155,11 +155,13 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
     features.append('gdp_lag1')
-
     x_ols = merged_df[features]
     y = merged_df['gdp']
     y_with_date = merged_df[['gdp', 'date_grouped']]
 
+    features_alt = features
+    features_alt.append('date_grouped')
+    x_ols_alt = merged_df[features_alt]
 
     x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
@@ -234,7 +236,8 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     var_variables.append('gdp')
     var_variables.append('date_grouped')
     var_df = merged_df[var_variables]
-    nowcast_regression(var_df, x_ols, y, y_with_date)
+    # nowcast_regression(var_df, x_ols, y, y_with_date)
+    nowcast_regression_revamped(x_ols_alt, y, y_with_date)
 
     return rows
 
@@ -280,9 +283,6 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
 
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
-
-    # Create a ratio on the weightings
-    merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
 
     features.extend(['gdp_lag1', 'cinema_lockdown'])
     x_ols = merged_df[features]
@@ -355,7 +355,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     Nowcasting model
     '''
 
-    nowcast_regression(x_ols, y, y_with_date, features, covid=True)
+    # nowcast_regression('', x_ols, y, y_with_date, covid=True)
 
 class GeneratingDataSourceDataframes():
 

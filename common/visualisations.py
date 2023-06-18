@@ -55,13 +55,14 @@ def plot_nowcast(model, x_test_full, y_test_full, covid_features, non_covid_feat
     return y_pred
 
 def plot_var_nowcast(var_df, var_train, var_test):
+    # https://www.machinelearningplus.com/time-series/vector-autoregression-examples-python/
+    # https://www.analyticsvidhya.com/blog/2021/08/vector-autoregressive-model-in-python/
+
     # OPTION 2
     # https://cprosenjit.medium.com/multivariate-time-series-forecasting-using-vector-autoregression-3e5c9b85e42a
-    # Dataset required to train model
+
     # Select the required columns
     data_var = var_df[['monthly_gross',
-         # TODO - remove gdp_lag1
-         # 'gdp_lag1',
          'weighted_ranking',
          'sentiment',
          'average_temperature',
@@ -123,6 +124,7 @@ def plot_var_nowcast(var_df, var_train, var_test):
     gdp_var_prediction_df
 
     # Plotting VAR forecast
+    fig, ax = plt.subplots()
     plt.figure(figsize=(14, 8))
     # Plotting the Actuals
     plt.plot(df_differenced.index, df_differenced.gdp, label='Actuals')

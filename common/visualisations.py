@@ -100,11 +100,8 @@ def plot_var_nowcast(var_df, var_train, var_test):
     # Converts NumPy multidimensional array into Pandas DataFrame
     predictions_df = pd.DataFrame(predictions)
     # Assign the column headers
-    # TODO - might need to edit this for covid
     predictions_df.columns = \
         ['monthly_gross',
-         # TODO - remove gdp_lag1
-         # 'gdp_lag1',
          'weighted_ranking',
          'sentiment',
          'average_temperature',
@@ -139,6 +136,8 @@ def plot_var_nowcast(var_df, var_train, var_test):
     # TODO - incorporate granger and adf test at beginning
     # TODO - remove gdp lag1 from everything!!!
     # # TODO - check https://medium.com/mlearning-ai/how-i-used-statsmodels-vector-autoregression-var-to-forecast-on-multivariate-training-data-fc867eb6de8b
+    # TODO - check if graph Y axis is %change in GDP
+    # TODO - note that we don't use gdp lag as that is how VAR works.
 
     # https://taufik-azri.medium.com/forecasting-through-economic-uncertainty-multivariable-time-series-analysis-with-var-and-prophet-e6b801962acb
     # https://github.com/fickaz/time-series-for-business/blob/master/Forecasting.ipynb

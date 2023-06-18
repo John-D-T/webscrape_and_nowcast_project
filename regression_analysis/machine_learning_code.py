@@ -206,12 +206,13 @@ def nowcast_regression_revamped(x, y, y_with_date):
     pred_ridge_1_list = []
     pred_lasso_01_list = []
     pred_ridge_01_list = []
-    pred_var_list = []
+    #pred_var_list = []
+    # TODO - add pred_var_list to this list when I figure out VAR
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
-                          pred_lasso_01_list, pred_ridge_01_list, pred_var_list]
+                          pred_lasso_01_list, pred_ridge_01_list]
 
-    # TODO - create a loop to iteratively generate a prediction df
-    # TODO - loop through each time - going over the last 5 years
+    # Loop to iteratively generate a prediction df
+    # Loop through each month - going over the last 5 years/60 months
     x_row_count = len(x.index)
     for i in range(x_row_count-60, x_row_count):
         # TODO - if approaching 2020, add an if statement to catch it and remove 'sentiment' from the features
@@ -247,17 +248,17 @@ def nowcast_regression_revamped(x, y, y_with_date):
             predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
             a.append(predicted_value)
 
-    # TODO - pass newly created lists into empty dfs:
+    # Pass newly created lists into empty dfs:
     pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lr'})
-    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp'))
-    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp'))
-    pred_lasso_1_df = pd.DataFrame(data=pred_lasso_1_list, columns=('date_grouped', 'pred_gdp'))
-    pred_lasso_01_df = pd.DataFrame(data=pred_lasso_01_list, columns=('date_grouped', 'pred_gdp'))
-    pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp'))
-    pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp'))
-    pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp'))
+    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_gbr'})
+    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_rfr'})
+    pred_lasso_1_df = pd.DataFrame(data=pred_lasso_1_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lasso_1'})
+    pred_lasso_01_df = pd.DataFrame(data=pred_lasso_01_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lasso_01'})
+    pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_ridge_1'})
+    pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_ridge_01'})
+    #pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_var'})
 
-    # TODO - group all dfs to pass into nowcast plot
+    # Group all dfs to pass into nowcast plot
     complete_df = pd.merge(pred_lr_df, pred_gbr_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_gbr_list, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_rfr_df, on=['date_grouped'])
@@ -265,23 +266,42 @@ def nowcast_regression_revamped(x, y, y_with_date):
     complete_df = pd.merge(complete_df, pred_lasso_01_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_ridge_1_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_ridge_01_df, on=['date_grouped'])
-    complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
+    #complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
 
 
-    # TODO - merge with y_with_date
+    # Merge with y_with_date
     complete_df = pd.merge(complete_df, y_with_date, on=['date_grouped'])
 
-    # TODO - derived column of %differential between gdp and predicted gdp. For all models
-    complete_df['lr_pct_difference'] = (complete_df['pred_gdp'] - complete_df['gdp']) / complete_df['pred_gdp']
-    # TODO - do for rest of models
+    # Derived column of %differential between gdp and predicted gdp. Do so for all models
+    complete_df['lr_pct_difference'] = (complete_df['pred_gdp_lr'] - complete_df['gdp']) / complete_df['pred_gdp_lr']
+    complete_df['gbr_pct_difference'] = (complete_df['pred_gdp_gbr'] - complete_df['gdp']) / complete_df['pred_gdp_gbr']
+    complete_df['rfr_pct_difference'] = (complete_df['pred_gdp_rfr'] - complete_df['gdp']) / complete_df['pred_gdp_rfr']
+    complete_df['lasso_1_pct_difference'] = (complete_df['pred_gdp_lasso_1'] - complete_df['gdp']) / complete_df['pred_gdp_lasso_1']
+    complete_df['lasso_01_pct_difference'] = (complete_df['pred_gdp_lasso_01'] - complete_df['gdp']) / complete_df['pred_gdp_lasso_01']
+    complete_df['ridge_1_pct_difference'] = (complete_df['pred_gdp_ridge_1'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_1']
+    complete_df['ridge_01_pct_difference'] = (complete_df['pred_gdp_ridge_01'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_01']
 
 
     # TODO - Plot nowcast graph at the end of the loop
-    # plot_nowcast(model=lr_model, x_test_full=x_test_full, y_test_full=y_test_full,
-    #                          covid_features=covid_nowcast_features,
-    #                          non_covid_features=non_covid_nowcast, color='maroon', model_label='linear regression',
-    #                          model_name='lr',
-    #                          covid=covid)
+    fig, ax = plt.subplots()
+
+    plt.plot(complete_df['date_grouped'], complete_df['lr_pct_difference'], '-o', label="lr_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['gbr_pct_difference'], '-o', label="gbr_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['rfr_pct_difference'], '-o', label="rfr_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['lasso_1_pct_difference'], '-o', label="lasso_1_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['lasso_01_pct_difference'], '-o', label="lasso_01_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['ridge_1_pct_difference'], '-o', label="ridge_1_pct_difference gdp", markersize=3)
+    plt.plot(complete_df['date_grouped'], complete_df['ridge_01_pct_difference'], '-o', label="ridge_01_pct_difference gdp", markersize=3)
+    #TODO - see if a legend is required
+    #leg = plt.legend(loc='upper center')
+    plt.grid()
+    # ax.spines['right'].set_visible(False)
+    # ax.spines['top'].set_visible(False)
+    # if covid:
+    #     plt.title('Nowcast test set - %s (including covid)' % model_name)
+    # else:
+    #     plt.title('Nowcast test set - %s (pre-covid)' % model_name)
+    plt.show()
 
 
 

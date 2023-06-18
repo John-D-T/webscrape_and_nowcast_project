@@ -198,7 +198,7 @@ def nowcast_regression_revamped(x, y, y_with_date):
                          'frequency_baftas',
                          'average_temperature', 'sentiment',
                          'weighted_ranking', 'gdp_lag1']
-    # TODO - create list for each model, to eventually contain predictions and be passed into a df
+    # Create list for each model, to eventually contain predictions and be passed into a df
     pred_lr_list = []
     pred_gbr_list = []
     pred_rfr_list = []
@@ -207,7 +207,8 @@ def nowcast_regression_revamped(x, y, y_with_date):
     pred_lasso_01_list = []
     pred_ridge_01_list = []
     pred_var_list = []
-    list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_list, pred_ridge_list, pred_var_list]
+    list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
+                          pred_lasso_01_list, pred_ridge_01_list, pred_var_list]
 
     # TODO - create a loop to iteratively generate a prediction df
     # TODO - loop through each time - going over the last 5 years
@@ -236,7 +237,7 @@ def nowcast_regression_revamped(x, y, y_with_date):
         ridge_model_alpha_01 = Ridge(alpha=0.1).fit(x_train, y_train)
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
-        list_of_models = [lr_model, gbr_model, rfr_model, ridge_model_alpha_1, lasso_model_alpha_1, ridge_model_alpha_01, ridge_model_alpha_01]
+        list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01]
 
         # Loop through each model
         for a, b in zip(list_of_predictors, list_of_models):

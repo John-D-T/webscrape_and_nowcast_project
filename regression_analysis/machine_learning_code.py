@@ -9,6 +9,7 @@ from common.latex_file_generator import save_table_as_latex
 from common.visualisations import plot_importance_features, plot_nowcast, plot_var_nowcast
 from statsmodels.tsa.stattools import grangercausalitytests
 import pandas as pd
+from statsmodels.tsa.api import VAR
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -189,6 +190,9 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     """
     Function to nowcast, using machine learning techniques
     """
+
+    var_df = var_df.loc[:, ~var_df.columns.duplicated()].copy()
+
     # TODO - see if I need to add 'const' back
     covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                      'frequency_baftas',
@@ -209,7 +213,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     pred_var_list = []
     # TODO - add pred_var_list to this list when I figure out VAR
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
-                          pred_lasso_01_list, pred_ridge_01_list]
+                          pred_lasso_01_list, pred_ridge_01_list, pred_var_list]
 
     # Loop to iteratively generate a prediction df
     # Loop through each month - going over the last 5 years/60 months
@@ -239,29 +243,61 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
 
-        var_train, var_test = train_test_split(var_df, test_size=0.3, shuffle=False)
+        # https://towardsdatascience.com/vector-autoregressive-for-forecasting-time-series-a60e6f168c70
+        var_df_pred = var_df
+        var_train, var_test = var_df_pred.iloc[(i-48):i], var_df_pred.iloc[[i]]
+        # if 'date_grouped' in var_train: # TODO - clean up this if-else code
+        #     var_train_diff = var_train.drop(columns=['date_grouped'])
+        # else:
+        var_train_diff = var_train
+        var_train_diff.diff().dropna(inplace=True)
+        if 'date_grouped' in var_train_diff:
+            var_train_diff.set_index('date_grouped', inplace=True)
+        var_model = VAR(var_train_diff)
+        res = var_model.select_order(maxlags=1)
+        #print(res.summary())
+        var_model = VAR(endog=var_train_diff)
+        var_model = var_model.fit(1)
 
-
-
-        list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01]
+        list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01, var_model]
 
         # Loop through each model
         for a, b in zip(list_of_predictors, list_of_models):
-            # Append prediction to each relevant dataframe
-            x_test['y_pred'] = b.predict(x_test[features])
-            # Append this predicted value - date pair into a list
-            predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
-            a.append(predicted_value)
+            if b == var_model:
+                lag_order = b.k_ar
+                input_data = var_train_diff.values[-lag_order:]
+                pred = b.forecast(y=input_data, steps=1)
+                # var doesn't like the date column, so the next few lines are not clean code
+                if 'date_grouped' in var_df_pred:
+                    var_df_pred.set_index('date_grouped', inplace=True)
+                pred = (pd.DataFrame(pred, index=var_test.index, columns=var_df_pred.columns + '_pred'))
+
+                if 'date_grouped' not in var_test:
+                    var_test = var_test.reset_index()
+                pred = pred.reset_index()
+                if 'date_grouped' not in pred:
+                    pred = pred.set_index(keys='index')
+                    pred['date_grouped'] = var_test[['date_grouped']]
+
+                predicted_value = pred[['date_grouped', 'gdp_pred']].values.tolist()[0]
+                a.append(predicted_value)
+
+            else:
+                # Append prediction to each relevant dataframe
+                x_test['y_pred'] = b.predict(x_test[features])
+                # Append this predicted value - date pair into a list
+                predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
+                a.append(predicted_value)
 
     # Pass newly created lists into empty dfs:
-    pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lr'})
-    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_gbr'})
-    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_rfr'})
-    pred_lasso_1_df = pd.DataFrame(data=pred_lasso_1_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lasso_1'})
-    pred_lasso_01_df = pd.DataFrame(data=pred_lasso_01_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_lasso_01'})
-    pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_ridge_1'})
-    pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_ridge_01'})
-    #pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp')).rename(columns={'pred_gdp':'pred_gdp_var'})
+    pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp_lr'))
+    pred_gbr_df = pd.DataFrame(data=pred_gbr_list, columns=('date_grouped', 'pred_gdp_gbr'))
+    pred_rfr_df = pd.DataFrame(data=pred_rfr_list, columns=('date_grouped', 'pred_gdp_rfr'))
+    pred_lasso_1_df = pd.DataFrame(data=pred_lasso_1_list, columns=('date_grouped', 'pred_gdp_lasso_1'))
+    pred_lasso_01_df = pd.DataFrame(data=pred_lasso_01_list, columns=('date_grouped', 'pred_gdp_lasso_01'))
+    pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp_ridge_1'))
+    pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp_ridge_01'))
+    pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp_var'))
 
     # Group all dfs to pass into nowcast plot
     complete_df = pd.merge(pred_lr_df, pred_gbr_df, on=['date_grouped'])
@@ -270,7 +306,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     complete_df = pd.merge(complete_df, pred_lasso_01_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_ridge_1_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_ridge_01_df, on=['date_grouped'])
-    #complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
 
 
     # Merge with y_with_date
@@ -284,6 +320,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     complete_df['lasso_01_pct_difference'] = (complete_df['pred_gdp_lasso_01'] - complete_df['gdp']) / complete_df['pred_gdp_lasso_01']
     complete_df['ridge_1_pct_difference'] = (complete_df['pred_gdp_ridge_1'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_1']
     complete_df['ridge_01_pct_difference'] = (complete_df['pred_gdp_ridge_01'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_01']
+    complete_df['var_pct_difference'] = (complete_df['pred_gdp_var'] - complete_df['gdp']) / complete_df['pred_gdp_var']
 
 
     # TODO - Plot nowcast graph at the end of the loop
@@ -296,10 +333,12 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     plt.plot(complete_df['date_grouped'], complete_df['lasso_01_pct_difference'], '-o', label="lasso_01_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['ridge_1_pct_difference'], '-o', label="ridge_1_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['ridge_01_pct_difference'], '-o', label="ridge_01_pct_difference gdp", markersize=3)
-    #TODO - see if a legend is required
+    plt.plot(complete_df['date_grouped'], complete_df['var_pct_difference'], '-o', label="var_pct_difference gdp", markersize=3)
+
     leg = plt.legend(loc='upper center')
     plt.grid()
     plt.title('GDP Nowcast model comparison: 2015 - 2020')
+    # TODO - work on naming conventions (make it covid agnostic)
     # if covid:
     #     plt.title('Nowcast test set - %s (including covid)' % model_name)
     # else:
@@ -318,7 +357,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     y_pred_lasso_01 = complete_df['pred_gdp_lasso_01'].values.tolist()
     y_pred_ridge_1 = complete_df['pred_gdp_ridge_1'].values.tolist()
     y_pred_ridge_01 = complete_df['pred_gdp_ridge_1'].values.tolist()
-
+    y_pred_var = complete_df['pred_gdp_var'].values.tolist()
 
     # Create a custom y_test to cover the date range y_pred_lr covered
     y_test = y.iloc[x_row_count-60: x_row_count].values.tolist()

@@ -10,6 +10,7 @@ from common.visualisations import plot_importance_features, plot_nowcast, plot_v
 from statsmodels.tsa.stattools import grangercausalitytests
 import pandas as pd
 from statsmodels.tsa.api import VAR
+from statsmodels.tsa.ar_model import AutoReg
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -197,7 +198,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                      'frequency_baftas',
                      'average_temperature', 'weighted_ranking',
-                     'gdp_lag1', 'cinema_lockdown']
+                     'gdp_lag1'] #, 'cinema_lockdown'
     non_covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                          'frequency_baftas',
                          'average_temperature', 'sentiment',
@@ -211,18 +212,24 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     pred_lasso_01_list = []
     pred_ridge_01_list = []
     pred_var_list = []
-    # TODO - add pred_var_list to this list when I figure out VAR
+    pred_ar_list = []
+
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
-                          pred_lasso_01_list, pred_ridge_01_list, pred_var_list]
+                          pred_lasso_01_list, pred_ridge_01_list, pred_var_list, pred_ar_list]
 
     # Loop to iteratively generate a prediction df
     # Loop through each month - going over the last 5 years/60 months
     x_row_count = len(x.index)
+    if covid:
+        x = x.drop(columns='cinema_lockdown')
     for i in range(x_row_count-60, x_row_count):
-        # TODO - if approaching 2020, add an if statement to catch it and remove 'sentiment' from the features
-        if x.iloc[i]['date_grouped'] > pd.to_datetime('2020-02-01'):
-            # TODO - will also need to add lockdown dummy to x?
-            x = x.drop['sentiment']
+        # If approaching 2020, add an if statement to catch it and remove 'sentiment' from the features
+        # if x.iloc[i]['date_grouped'] > pd.to_datetime('2020-02-01'):
+        #     # x = x.drop['sentiment']
+        #     features = covid_nowcast_features
+        # else:
+        #     features = non_covid_nowcast_features
+        if covid:
             features = covid_nowcast_features
         else:
             features = non_covid_nowcast_features
@@ -246,20 +253,23 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
         # https://towardsdatascience.com/vector-autoregressive-for-forecasting-time-series-a60e6f168c70
         var_df_pred = var_df
         var_train, var_test = var_df_pred.iloc[(i-48):i], var_df_pred.iloc[[i]]
-        # if 'date_grouped' in var_train: # TODO - clean up this if-else code
-        #     var_train_diff = var_train.drop(columns=['date_grouped'])
-        # else:
         var_train_diff = var_train
         var_train_diff.diff().dropna(inplace=True)
         if 'date_grouped' in var_train_diff:
             var_train_diff.set_index('date_grouped', inplace=True)
-        var_model = VAR(var_train_diff)
+        if not covid:
+            var_model = VAR(var_train_diff)
+        else:
+            var_model = VAR(var_train_diff.drop(columns=['cinema_lockdown']))
         res = var_model.select_order(maxlags=1)
-        #print(res.summary())
         var_model = VAR(endog=var_train_diff)
         var_model = var_model.fit(1)
 
-        list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01, var_model]
+        # AR model - our benchmark (only using previous values of GDP)
+        var_train_diff_gdp = var_train_diff['gdp']
+        ar_model = AutoReg(endog=var_train_diff_gdp, lags=1).fit()
+
+        list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01, var_model, ar_model]
 
         # Loop through each model
         for a, b in zip(list_of_predictors, list_of_models):
@@ -281,7 +291,14 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
 
                 predicted_value = pred[['date_grouped', 'gdp_pred']].values.tolist()[0]
                 a.append(predicted_value)
-
+            elif b == ar_model:
+                var_train_diff_gdp = var_train_diff_gdp.reset_index().drop(columns=['date_grouped'])
+                if not covid:
+                    x_test['y_pred'] = b.predict(start=len(var_train_diff_gdp['gdp']), end=len(var_train_diff_gdp['gdp'] - 1), dynamic=False)[0]
+                if covid:
+                    x_test['y_pred'] = b.predict(start=len(var_train_diff_gdp['gdp']), end=len(var_train_diff_gdp['gdp'] - 1), dynamic=False).values[0]
+                predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
+                a.append(predicted_value)
             else:
                 # Append prediction to each relevant dataframe
                 x_test['y_pred'] = b.predict(x_test[features])
@@ -298,6 +315,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     pred_ridge_1_df = pd.DataFrame(data=pred_ridge_1_list, columns=('date_grouped', 'pred_gdp_ridge_1'))
     pred_ridge_01_df = pd.DataFrame(data=pred_ridge_01_list, columns=('date_grouped', 'pred_gdp_ridge_01'))
     pred_var_df = pd.DataFrame(data=pred_var_list, columns=('date_grouped', 'pred_gdp_var'))
+    pred_ar_df = pd.DataFrame(data=pred_ar_list, columns=('date_grouped', 'pred_gdp_ar'))
 
     # Group all dfs to pass into nowcast plot
     complete_df = pd.merge(pred_lr_df, pred_gbr_df, on=['date_grouped'])
@@ -307,9 +325,9 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     complete_df = pd.merge(complete_df, pred_ridge_1_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_ridge_01_df, on=['date_grouped'])
     complete_df = pd.merge(complete_df, pred_var_df, on=['date_grouped'])
+    complete_df = pd.merge(complete_df, pred_ar_df, on=['date_grouped'])
 
-
-    # Merge with y_with_date
+    # Merge complete_df with y_with_date
     complete_df = pd.merge(complete_df, y_with_date, on=['date_grouped'])
 
     # Derived column of %differential between gdp and predicted gdp. Do so for all models
@@ -321,9 +339,11 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     complete_df['ridge_1_pct_difference'] = (complete_df['pred_gdp_ridge_1'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_1']
     complete_df['ridge_01_pct_difference'] = (complete_df['pred_gdp_ridge_01'] - complete_df['gdp']) / complete_df['pred_gdp_ridge_01']
     complete_df['var_pct_difference'] = (complete_df['pred_gdp_var'] - complete_df['gdp']) / complete_df['pred_gdp_var']
+    complete_df['ar_pct_difference'] = (complete_df['pred_gdp_ar'] - complete_df['gdp']) / complete_df['pred_gdp_ar']
 
 
-    # TODO - Plot nowcast graph at the end of the loop
+    # Plot nowcast graph # complete_df = complete_df.sort_values(by='date_grouped)'
+    # TODO - fix covid plot - lines are all over the place
     fig, ax = plt.subplots()
 
     plt.plot(complete_df['date_grouped'], complete_df['lr_pct_difference'], '-o', label="lr_pct_difference gdp", markersize=3)
@@ -334,15 +354,14 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     plt.plot(complete_df['date_grouped'], complete_df['ridge_1_pct_difference'], '-o', label="ridge_1_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['ridge_01_pct_difference'], '-o', label="ridge_01_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['var_pct_difference'], '-o', label="var_pct_difference gdp", markersize=3)
-
+    plt.plot(complete_df['date_grouped'], complete_df['ar_pct_difference'], '-o', label="ar_pct_difference gdp", markersize=3)
     leg = plt.legend(loc='upper center')
     plt.grid()
-    plt.title('GDP Nowcast model comparison: 2015 - 2020')
-    # TODO - work on naming conventions (make it covid agnostic)
-    # if covid:
-    #     plt.title('Nowcast test set - %s (including covid)' % model_name)
-    # else:
-    #     plt.title('Nowcast test set - %s (pre-covid)' % model_name)
+
+    if covid:
+        plt.title('GDP Nowcast model comparison: 2018 - 2023')
+    else:
+        plt.title('GDP Nowcast model comparison: 2015 - 2020')
     plt.show()
 
 
@@ -358,6 +377,7 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     y_pred_ridge_1 = complete_df['pred_gdp_ridge_1'].values.tolist()
     y_pred_ridge_01 = complete_df['pred_gdp_ridge_1'].values.tolist()
     y_pred_var = complete_df['pred_gdp_var'].values.tolist()
+    y_pred_ar = complete_df['pred_gdp_ar'].values.tolist()
 
     # Create a custom y_test to cover the date range y_pred_lr covered
     y_test = y.iloc[x_row_count-60: x_row_count].values.tolist()
@@ -375,26 +395,34 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     rmse_ridge_1 = np.sqrt(metrics.mean_squared_error(y_test, y_pred_ridge_1))
     rmse_ridge_01 = np.sqrt(metrics.mean_squared_error(y_test, y_pred_ridge_01))
 
-    # TODO - figure out calculating DM-test (Diebold-Mariano Test) to compare models
+    rmse_var = np.sqrt(metrics.mean_squared_error(y_test, y_pred_var))
+
+    rmse_ar = np.sqrt(metrics.mean_squared_error(y_test, y_pred_ar))
+
+    # TODO - figure out calculating DM-test (Diebold-Mariano Test) to compare models to AR model
     # https://www.kaggle.com/code/jorgesandoval/xgboost-vs-lightgbm-using-diebold-mariano-test/notebook
     # DM-test - https://academic.oup.com/ej/pages/top_cited_papers
     # - https://medium.com/@philippetousignant/comparing-forecast-accuracy-in-python-diebold-mariano-test-ad109026f6ab#:~:text=In%20conclusion%2C%20the%20Diebold%2DMariano,when%20choosing%20a%20forecasting%20method.
-    dm_test = diebold_mariano_test(y_test, y_pred_lr, y_pred_gbr, h=1, crit="MSE")
+
+    dm_test_lr = diebold_mariano_test(y_test, y_pred_lr, y_pred_ar, h=1, crit="MSE")
+    dm_test_lasso = diebold_mariano_test(y_test, y_pred_lasso_1, y_pred_ar, h=1, crit="MSE")
+    dm_test_var = diebold_mariano_test(y_test, y_pred_var, y_pred_ar, h=1, crit="MSE")
 
     # Generate Latex Table with all results
-    rows = [['Model', 'train score', 'test score', 'RMSE'],
-            ['LR', rmse_lr],
-            ['GBR', rmse_gbr],
-            ['RFR', rmse_rfr],
-            ['Ridge Alpha 1', rmse_ridge_1],
-            ['Lasso Alpha 1', rmse_lasso_1],
-            ['Ridge Alpha 0.1', rmse_ridge_01],
-            ['Lasso Alpha 0.1', rmse_lasso_01]
-            # ['VAR', 'ESA', '21', '2002']]
+    rows = [['Model', 'RMSE', 'RMSE rel. to AR'],
+            ['LR', rmse_lr, ''],
+            ['GBR', rmse_gbr, ''],
+            ['RFR', rmse_rfr, ''],
+            ['Ridge Alpha 1', rmse_ridge_1, ''],
+            ['Lasso Alpha 1', rmse_lasso_1, ''],
+            ['Ridge Alpha 0.1', rmse_ridge_01, ''],
+            ['Lasso Alpha 0.1', rmse_lasso_01, ''],
+            ['VAR', rmse_var, ''],
+            ['AR', rmse_ar, ''],
             ]
 
     # TODO - add some feature importance capture later
     if covid:
-        save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='nowcast_model_comparison_incl_covid', rows=rows, header_count=4)
+        save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='nowcast_model_comparison_incl_covid', rows=rows, header_count=3)
     else:
-        save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='nowcast_model_comparison_pre_covid', rows=rows, header_count=4)
+        save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='nowcast_model_comparison_pre_covid', rows=rows, header_count=3)

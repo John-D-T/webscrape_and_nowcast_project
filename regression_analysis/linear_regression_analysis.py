@@ -236,7 +236,7 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     var_variables.append('gdp')
     var_variables.append('date_grouped')
     var_df = merged_df[var_variables]
-    # nowcast_regression(var_df, x_ols, y, y_with_date)
+
     nowcast_regression_revamped(var_df, x_ols_alt, y, y_with_date)
 
     return rows
@@ -276,7 +276,7 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
                       pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
     merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
 
-    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+    #merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     # Add lags for the dependent variable
     merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
@@ -288,6 +288,11 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     x_ols = merged_df[features]
     y = merged_df['gdp']
     y_with_date = merged_df[['gdp', 'date_grouped']]
+
+    features_alt = features
+    features_alt.append('date_grouped')
+    x_ols_alt = merged_df[features_alt]
+
     x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     # OLS Regression using linearmodels - Has robust covariance
@@ -354,8 +359,11 @@ def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df,
     '''
     Nowcasting model
     '''
-
-    # nowcast_regression('', x_ols, y, y_with_date, covid=True)
+    var_variables = features
+    var_variables.append('gdp')
+    var_variables.append('date_grouped')
+    var_df = merged_df[var_variables]
+    nowcast_regression_revamped(var_df, x_ols_alt, y, y_with_date, covid=True)
 
 class GeneratingDataSourceDataframes():
 

@@ -223,12 +223,6 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     if covid:
         x = x.drop(columns='cinema_lockdown')
     for i in range(x_row_count-60, x_row_count):
-        # If approaching 2020, add an if statement to catch it and remove 'sentiment' from the features
-        # if x.iloc[i]['date_grouped'] > pd.to_datetime('2020-02-01'):
-        #     # x = x.drop['sentiment']
-        #     features = covid_nowcast_features
-        # else:
-        #     features = non_covid_nowcast_features
         if covid:
             features = covid_nowcast_features
         else:
@@ -245,10 +239,17 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
         rfr_model = RandomForestRegressor(random_state=0).fit(x_train, y_train)
         ridge_model_alpha_1 = Ridge(alpha=1).fit(x_train, y_train)
         lasso_model_alpha_1 = Lasso(alpha=1).fit(x_train, y_train)
-        # TODO - what does this mean: Ill-conditioned matrix (rcond=1.38778e-17): result may not be accurate.
         ridge_model_alpha_01 = Ridge(alpha=0.1).fit(x_train, y_train)
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
+
+        if i == x_row_count - 5:
+            plot_importance_features(model=lr_model, color='maroon', covid_features=covid_nowcast_features,
+                                 non_covid_features=non_covid_nowcast_features, model_name='Lin Reg nowcast', coef=True,
+                                 covid=covid)
+            plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_nowcast_features, coef=True,
+                                     non_covid_features=non_covid_nowcast_features, model_name='Lasso nowcast',
+                                     covid=covid)
 
         # https://towardsdatascience.com/vector-autoregressive-for-forecasting-time-series-a60e6f168c70
         var_df_pred = var_df
@@ -341,9 +342,8 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     complete_df['var_pct_difference'] = (complete_df['pred_gdp_var'] - complete_df['gdp']) / complete_df['pred_gdp_var']
     complete_df['ar_pct_difference'] = (complete_df['pred_gdp_ar'] - complete_df['gdp']) / complete_df['pred_gdp_ar']
 
-
-    # Plot nowcast graph # complete_df = complete_df.sort_values(by='date_grouped)'
-    # TODO - fix covid plot - lines are all over the place
+    complete_df = complete_df.sort_values(by='date_grouped')
+    # Plot nowcast graph
     fig, ax = plt.subplots()
 
     plt.plot(complete_df['date_grouped'], complete_df['lr_pct_difference'], '-o', label="lr_pct_difference gdp", markersize=3)
@@ -355,16 +355,16 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     plt.plot(complete_df['date_grouped'], complete_df['ridge_01_pct_difference'], '-o', label="ridge_01_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['var_pct_difference'], '-o', label="var_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['ar_pct_difference'], '-o', label="ar_pct_difference gdp", markersize=3)
-    leg = plt.legend(loc='upper center')
     plt.grid()
+    # TODO - add axis labels
 
     if covid:
         plt.title('GDP Nowcast model comparison: 2018 - 2023')
+        leg = plt.legend(loc='upper right')
     else:
         plt.title('GDP Nowcast model comparison: 2015 - 2020')
+        leg = plt.legend(loc='upper center')
     plt.show()
-
-
 
     # Calculating RMSE (Root mean squared error) for each model
     # https://stackoverflow.com/questions/69844967/calculation-of-mse-and-rmse-in-linear-regression
@@ -399,30 +399,34 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
 
     rmse_ar = np.sqrt(metrics.mean_squared_error(y_test, y_pred_ar))
 
-    # TODO - figure out calculating DM-test (Diebold-Mariano Test) to compare models to AR model
+    # DM-test (Diebold-Mariano Test) to compare models to AR model
     # https://www.kaggle.com/code/jorgesandoval/xgboost-vs-lightgbm-using-diebold-mariano-test/notebook
-    # DM-test - https://academic.oup.com/ej/pages/top_cited_papers
-    # - https://medium.com/@philippetousignant/comparing-forecast-accuracy-in-python-diebold-mariano-test-ad109026f6ab#:~:text=In%20conclusion%2C%20the%20Diebold%2DMariano,when%20choosing%20a%20forecasting%20method.
+    # https://academic.oup.com/ej/pages/top_cited_papers
+    # https://medium.com/@philippetousignant/comparing-forecast-accuracy-in-python-diebold-mariano-test-ad109026f6ab#:~:text=In%20conclusion%2C%20the%20Diebold%2DMariano,when%20choosing%20a%20forecasting%20method.
 
-    dm_test_lr = diebold_mariano_test(y_test, y_pred_lr, y_pred_ar, h=1, crit="MSE")
-    dm_test_lasso = diebold_mariano_test(y_test, y_pred_lasso_1, y_pred_ar, h=1, crit="MSE")
-    dm_test_var = diebold_mariano_test(y_test, y_pred_var, y_pred_ar, h=1, crit="MSE")
+    dm_test_lr, dm_test_lr_p_val = diebold_mariano_test(y_test, y_pred_lr, y_pred_ar, h=1, crit="MSE")
+    dm_test_gbr, dm_test_gbr_p_val = diebold_mariano_test(y_test, y_pred_gbr, y_pred_ar, h=1, crit="MSE")
+    dm_test_rfr, dm_test_rfr_p_val = diebold_mariano_test(y_test, y_pred_rfr, y_pred_ar, h=1, crit="MSE")
+    dm_test_lasso_1, dm_test_lasso_1_p_val = diebold_mariano_test(y_test, y_pred_lasso_1, y_pred_ar, h=1, crit="MSE")
+    dm_test_lasso_01, dm_test_lasso_01_p_val = diebold_mariano_test(y_test, y_pred_lasso_01, y_pred_ar, h=1, crit="MSE")
+    dm_test_ridge_1, dm_test_ridge_1_p_val = diebold_mariano_test(y_test, y_pred_ridge_1, y_pred_ar, h=1, crit="MSE")
+    dm_test_ridge_01, dm_test_ridge_01_p_val = diebold_mariano_test(y_test, y_pred_ridge_01, y_pred_ar, h=1, crit="MSE")
+    dm_test_var, dm_test_var_p_val = diebold_mariano_test(y_test, y_pred_var, y_pred_ar, h=1, crit="MSE")
 
     # Generate Latex Table with all results
-    rows = [['Model', 'RMSE', 'RMSE rel. to AR'],
-            ['LR', rmse_lr, ''],
-            ['GBR', rmse_gbr, ''],
-            ['RFR', rmse_rfr, ''],
-            ['Ridge Alpha 1', rmse_ridge_1, ''],
-            ['Lasso Alpha 1', rmse_lasso_1, ''],
-            ['Ridge Alpha 0.1', rmse_ridge_01, ''],
-            ['Lasso Alpha 0.1', rmse_lasso_01, ''],
-            ['VAR', rmse_var, ''],
-            ['AR', rmse_ar, ''],
+    rows = [['Model', 'RMSE', 'DM-test vs AR (benchmark)', 'DM-test p-value'],
+            ['AR (benchmark)', rmse_ar, 'N/A', 'N/A'],
+            ['LR', rmse_lr, dm_test_lr, dm_test_lr_p_val],
+            ['GBR', rmse_gbr, dm_test_gbr, dm_test_gbr_p_val],
+            ['RFR', rmse_rfr, dm_test_rfr, dm_test_rfr_p_val],
+            ['Ridge Alpha 1', rmse_ridge_1, dm_test_ridge_1, dm_test_ridge_1_p_val],
+            ['Lasso Alpha 1', rmse_lasso_1, dm_test_lasso_1, dm_test_lasso_1_p_val],
+            ['Ridge Alpha 0.1', rmse_ridge_01, dm_test_ridge_01, dm_test_ridge_01_p_val],
+            ['Lasso Alpha 0.1', rmse_lasso_01, dm_test_lasso_01, dm_test_lasso_01_p_val],
+            ['VAR', rmse_var, dm_test_var, dm_test_var_p_val],
             ]
 
-    # TODO - add some feature importance capture later
     if covid:
-        save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='nowcast_model_comparison_incl_covid', rows=rows, header_count=3)
+        save_table_as_latex(caption="A comparison of nowcasting models (including covid)", file_name='nowcast_model_comparison_incl_covid', rows=rows, header_count=4)
     else:
-        save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='nowcast_model_comparison_pre_covid', rows=rows, header_count=3)
+        save_table_as_latex(caption="A comparison of nowcasting models (pre-covid)", file_name='nowcast_model_comparison_pre_covid', rows=rows, header_count=4)

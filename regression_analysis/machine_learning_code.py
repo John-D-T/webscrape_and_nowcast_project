@@ -30,7 +30,6 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
 
     var_df = var_df.loc[:, ~var_df.columns.duplicated()].copy()
 
-    # TODO - see if I need to add 'const' back
     covid_nowcast_features = ['monthly_gross', 'frequency_cinemas_near_me',
                      'frequency_baftas',
                      'average_temperature', 'weighted_ranking',

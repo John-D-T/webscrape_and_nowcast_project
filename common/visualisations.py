@@ -31,6 +31,8 @@ def plot_importance_features(list_of_feature_importance_coef, model):
     plt.title('%s: Feature importance over time' % (model))
     leg = plt.legend(loc='lower right')
 
+    #plt.ylim(-0.2, 0.2)
+
 
 def append_to_importance_feature_coef(model, list_of_feature_importance_coef, date):
     importance = model.coef_

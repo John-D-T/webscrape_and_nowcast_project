@@ -4,41 +4,32 @@ from statsmodels.tsa.api import VAR
 import pandas as pd
 
 
-
-# def plot_importance_features(model, color, covid_features, non_covid_features, model_name, coef, covid=False):
-    # fig, ax = plt.subplots()
-    # if coef:
-    #     importance = model.coef_
-    # else:
-    #     importance = model.feature_importances_
-    # for i, v in enumerate(importance):
-    #     print('Feature: %0d, Score: %.5f' % (i, v))
-    #
-    # # plot feature importance
-    # if covid:
-    #     feature_list = covid_features
-    # else:
-    #     feature_list = non_covid_features
-    # bars = ax.barh(feature_list, importance, color=color)
-    # ax.bar_label(bars)
-    # if covid:
-    #     title = 'Feature importance - %s (including covid)' % model_name
-    #     plt.title(title)
-    # else:
-    #     title = 'Feature importance - %s (pre-covid)' % model_name
-    #     plt.title(title)
-    # plt.show()
-def plot_importance_features(list_of_feature_importance_coef):
-    # TODO - convert list_of_feature_importance_coef to a df?
-
+def plot_importance_features(list_of_feature_importance_coef, model):
     for coefficient_and_date in list_of_feature_importance_coef:
         feature_df = pd.DataFrame(data=coefficient_and_date, columns=('date_grouped', 'feature', 'coefficient'))
         fig, ax = plt.subplots()
 
         plt.plot(feature_df['date_grouped'], feature_df['coefficient'], '-o', label=feature_df['feature'][0],
-                 markersize=3)
-        # Setting max number of ticks
+                 markersize=3, color='black')
+        # 1) Setting max number of ticks, 2) adding a grid, 3) removing the top and right borders, 4) adding a title
         ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+        plt.grid()
+        ax.spines[['right', 'top']].set_visible(False)
+        plt.title('%s: Feature importance of "%s" over time' % (model, feature_df['feature'][0]))
+
+    fig, ax = plt.subplots()
+    for coefficient_and_date in list_of_feature_importance_coef:
+        feature_df = pd.DataFrame(data=coefficient_and_date, columns=('date_grouped', 'feature', 'coefficient'))
+
+        plt.plot(feature_df['date_grouped'], feature_df['coefficient'], '-o', label=feature_df['feature'][0],
+                 markersize=3, )
+
+    # 1) Setting max number of ticks, 2) adding a grid, 3) removing the top and right borders, 4) adding a title
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+    plt.grid()
+    ax.spines[['right', 'top']].set_visible(False)
+    plt.title('%s: Feature importance over time' % (model))
+    leg = plt.legend(loc='lower right')
 
 
 def append_to_importance_feature_coef(model, list_of_feature_importance_coef, date):

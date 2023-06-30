@@ -50,21 +50,28 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     pred_ar_list = []
 
     # Create a list for each feature, to eventually store all the coefficients (feature importance) for and to plot these over time
-    feature_importance_gdp_lag_list = []
-    feature_importance_weighted_ranking_list = []
-    feature_importance_avg_temp_list = []
-    feature_importance_freq_baftas_list = []
-    feature_importance_freq_cinemas_near_me_list = []
-    feature_importance_freq_monthly_gross_list = []
+    feature_importance_gdp_lag_lr = []
+    feature_importance_weighted_ranking_lr = []
+    feature_importance_avg_temp_lr = []
+    feature_importance_freq_baftas_lr = []
+    feature_importance_freq_cinemas_near_me_lr = []
+    feature_importance_freq_monthly_gross_lr = []
 
-    list_of_feature_importance_coef_lr = [feature_importance_gdp_lag_list, feature_importance_weighted_ranking_list,
-                                       feature_importance_avg_temp_list, feature_importance_freq_baftas_list,
-                                       feature_importance_freq_cinemas_near_me_list, feature_importance_freq_monthly_gross_list]
+    feature_importance_gdp_lag_lasso = []
+    feature_importance_weighted_ranking_lasso = []
+    feature_importance_avg_temp_lasso = []
+    feature_importance_freq_baftas_lasso = []
+    feature_importance_freq_cinemas_near_me_lasso = []
+    feature_importance_freq_monthly_gross_lasso = []
 
-    list_of_feature_importance_coef_lasso = [feature_importance_gdp_lag_list, feature_importance_weighted_ranking_list,
-                                          feature_importance_avg_temp_list, feature_importance_freq_baftas_list,
-                                          feature_importance_freq_cinemas_near_me_list,
-                                          feature_importance_freq_monthly_gross_list]
+    list_of_feature_importance_coef_lr = [feature_importance_gdp_lag_lr, feature_importance_weighted_ranking_lr,
+                                       feature_importance_avg_temp_lr, feature_importance_freq_baftas_lr,
+                                       feature_importance_freq_cinemas_near_me_lr, feature_importance_freq_monthly_gross_lr]
+
+    list_of_feature_importance_coef_lasso = [feature_importance_gdp_lag_lasso, feature_importance_weighted_ranking_lasso,
+                                          feature_importance_avg_temp_lasso, feature_importance_freq_baftas_lasso,
+                                          feature_importance_freq_cinemas_near_me_lasso,
+                                          feature_importance_freq_monthly_gross_lasso]
 
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
                           pred_lasso_01_list, pred_ridge_01_list, pred_var_list, pred_ar_list]
@@ -171,10 +178,10 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
                                                   list_of_feature_importance_coef=list_of_feature_importance_coef_lasso,
                                                                                           date=date_reformatted)
 
-    # TODO - plot feature importance over time using list_of_feature_importance_coef_x
-    plot_importance_features(list_of_feature_importance_coef_lr)
+    # Plot feature importance over time using list_of_feature_importance_coef_x
+    plot_importance_features(list_of_feature_importance_coef_lr, model='Linear Regression')
 
-    plot_importance_features(list_of_feature_importance_coef_lasso)
+    plot_importance_features(list_of_feature_importance_coef_lasso, model='Lasso Regression (alpha = 1)')
 
 
     # Pass newly created lists into empty dfs:

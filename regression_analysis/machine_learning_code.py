@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from common.latex_file_generator import save_table_as_latex
-from common.visualisations import plot_importance_features, plot_nowcast, plot_var_nowcast
+from common.visualisations import plot_importance_features, append_to_importance_feature_coef
 from statsmodels.tsa.stattools import grangercausalitytests
 import pandas as pd
 from statsmodels.tsa.api import VAR
@@ -49,6 +49,23 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     pred_var_list = []
     pred_ar_list = []
 
+    # Create a list for each feature, to eventually store all the coefficients (feature importance) for and to plot these over time
+    feature_importance_gdp_lag_list = []
+    feature_importance_weighted_ranking_list = []
+    feature_importance_avg_temp_list = []
+    feature_importance_freq_baftas_list = []
+    feature_importance_freq_cinemas_near_me_list = []
+    feature_importance_freq_monthly_gross_list = []
+
+    list_of_feature_importance_coef_lr = [feature_importance_gdp_lag_list, feature_importance_weighted_ranking_list,
+                                       feature_importance_avg_temp_list, feature_importance_freq_baftas_list,
+                                       feature_importance_freq_cinemas_near_me_list, feature_importance_freq_monthly_gross_list]
+
+    list_of_feature_importance_coef_lasso = [feature_importance_gdp_lag_list, feature_importance_weighted_ranking_list,
+                                          feature_importance_avg_temp_list, feature_importance_freq_baftas_list,
+                                          feature_importance_freq_cinemas_near_me_list,
+                                          feature_importance_freq_monthly_gross_list]
+
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
                           pred_lasso_01_list, pred_ridge_01_list, pred_var_list, pred_ar_list]
 
@@ -78,13 +95,14 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
 
-        if i == x_row_count - 5:
-            plot_importance_features(model=lr_model, color='maroon', covid_features=covid_nowcast_features,
-                                 non_covid_features=non_covid_nowcast_features, model_name='Lin Reg nowcast', coef=True,
-                                 covid=covid)
-            plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_nowcast_features, coef=True,
-                                     non_covid_features=non_covid_nowcast_features, model_name='Lasso nowcast',
-                                     covid=covid)
+        # if i == x_row_count - 5:
+        #
+        #     plot_importance_features(model=lr_model, color='maroon', covid_features=covid_nowcast_features,
+        #                          non_covid_features=non_covid_nowcast_features, model_name='Lin Reg nowcast', coef=True,
+        #                          covid=covid)
+        #     plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_nowcast_features, coef=True,
+        #                              non_covid_features=non_covid_nowcast_features, model_name='Lasso nowcast',
+        #                              covid=covid)
 
         # https://towardsdatascience.com/vector-autoregressive-for-forecasting-time-series-a60e6f168c70
         var_df_pred = var_df
@@ -141,6 +159,23 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
                 # Append this predicted value - date pair into a list
                 predicted_value = x_test[['date_grouped', 'y_pred']].values.tolist()[0]
                 a.append(predicted_value)
+
+            # Code to get 'YYYY-MM-DD from a pandas series object containing numpy datetime
+            date_reformatted = str(x_test['date_grouped'].values[0])[:10]
+            if b == lr_model:
+                list_of_feature_importance_coef_lr = append_to_importance_feature_coef(model=b,
+                                                  list_of_feature_importance_coef=list_of_feature_importance_coef_lr,
+                                                                                       date=date_reformatted)
+            elif b == lasso_model_alpha_1:
+                list_of_feature_importance_coef_lasso = append_to_importance_feature_coef(model=b,
+                                                  list_of_feature_importance_coef=list_of_feature_importance_coef_lasso,
+                                                                                          date=date_reformatted)
+
+    # TODO - plot feature importance over time using list_of_feature_importance_coef_x
+    plot_importance_features(list_of_feature_importance_coef_lr)
+
+    plot_importance_features(list_of_feature_importance_coef_lasso)
+
 
     # Pass newly created lists into empty dfs:
     pred_lr_df = pd.DataFrame(data=pred_lr_list, columns=('date_grouped', 'pred_gdp_lr'))

@@ -198,6 +198,11 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     max_residual = merged_df['residuals'].max()  # 1.164928414420217
     min_residual = merged_df['residuals'].min()  # -1.3439102445690594
 
+    # Finding residuals which are > 0.6 and < -0.6
+    filtered_merged_df = merged_df[(merged_df.residuals > 0.6) | (merged_df.residuals < -0.6)]
+    filtered_merged_df = filtered_merged_df[['date_grouped', 'residuals']]
+    plt.plot(filtered_merged_df['date_grouped'], filtered_merged_df['residuals'], 'o', color='black')
+
     # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
     dw_test = durbin_watson(ols_model.resids) # 2.8126133956116295
 
@@ -242,7 +247,8 @@ def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, 
     return rows
 
 
-def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, rows, covid_check=False):
+def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, box_office_weightings_df,
+                                              google_trends_df, twitter_scrape_df, rows, covid_check=False):
     '''
     Preparing regression input
     '''
@@ -661,8 +667,8 @@ if __name__ == '__main__':
 
     rows = multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
 
-    multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, monthly_admission_df,
-                                             box_office_weightings_df, google_trends_df, twitter_scrape_df, rows)
+    multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, box_office_weightings_df,
+                                              google_trends_df, twitter_scrape_df, rows)
 
     clean_up()
 

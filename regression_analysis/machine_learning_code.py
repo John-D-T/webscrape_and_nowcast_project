@@ -5,12 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
-from common.latex_file_generator import save_table_as_latex
+from common.latex_file_generator import save_table_as_latex, save_df_as_image
 from common.visualisations import plot_importance_features, append_to_importance_feature_coef
 from statsmodels.tsa.stattools import grangercausalitytests
 import pandas as pd
 from statsmodels.tsa.api import VAR
-from statsmodels.tsa.ar_model import AutoReg
+from statsmodels.tsa.ar_model import AutoReg, ar_select_order
 
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
@@ -76,6 +76,8 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     list_of_predictors = [pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list,
                           pred_lasso_01_list, pred_ridge_01_list, pred_var_list, pred_ar_list]
 
+    list_of_ideal_lags = []
+
     # Loop to iteratively generate a prediction df
     # Loop through each month - going over the last 5 years/60 months
     x_row_count = len(x.index)
@@ -102,17 +104,10 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
         lasso_model_alpha_01 = Lasso(alpha=0.1).fit(x_train, y_train)
         # higher the alpha value, more restriction on the coefficients; low alpha > more generalization
 
-        # if i == x_row_count - 5:
-        #
-        #     plot_importance_features(model=lr_model, color='maroon', covid_features=covid_nowcast_features,
-        #                          non_covid_features=non_covid_nowcast_features, model_name='Lin Reg nowcast', coef=True,
-        #                          covid=covid)
-        #     plot_importance_features(model=lasso_model_alpha_1, color='black', covid_features=covid_nowcast_features, coef=True,
-        #                              non_covid_features=non_covid_nowcast_features, model_name='Lasso nowcast',
-        #                              covid=covid)
-
         # https://towardsdatascience.com/vector-autoregressive-for-forecasting-time-series-a60e6f168c70
         var_df_pred = var_df
+        # Drop the lagged gdp variable before performing VAR
+        var_df_pred = var_df_pred.drop(columns=['gdp_lag1'])
         var_train, var_test = var_df_pred.iloc[(i-48):i], var_df_pred.iloc[[i]]
         var_train_diff = var_train
         var_train_diff.diff().dropna(inplace=True)
@@ -122,13 +117,22 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
             var_model = VAR(var_train_diff)
         else:
             var_model = VAR(var_train_diff.drop(columns=['cinema_lockdown']))
-        res = var_model.select_order(maxlags=1)
+        res = var_model.select_order(maxlags=5)
         var_model = VAR(endog=var_train_diff)
+        # Issue when lags > 1: IndexError: index 0 is out of bounds for axis 0 with size 0
+        optimal_var_lag = res.bic
         var_model = var_model.fit(1)
 
         # AR model - our benchmark (only using previous values of GDP)
         var_train_diff_gdp = var_train_diff['gdp']
-        ar_model = AutoReg(endog=var_train_diff_gdp, lags=1).fit()
+
+        # Selecting optimal lag
+        ar_res = ar_select_order(var_train_diff_gdp, maxlag=12)
+        bic = ar_res._bic
+        bic_df = pd.DataFrame(list(bic.items()), columns=['Lags', 'BIC (Bayesian Information Criterion)'])
+        ideal_lag = bic_df.loc[0].values.tolist()
+        list_of_ideal_lags.append([str(var_test['date_grouped'].values[0])[:10], ideal_lag[0][-1], ideal_lag[1]])
+        ar_model = AutoReg(endog=var_train_diff_gdp, lags=ideal_lag[0][-1]).fit()
 
         list_of_models = [lr_model, gbr_model, rfr_model, lasso_model_alpha_1, ridge_model_alpha_1, lasso_model_alpha_01, ridge_model_alpha_01, var_model, ar_model]
 
@@ -177,6 +181,19 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
                 list_of_feature_importance_coef_lasso = append_to_importance_feature_coef(model=b,
                                                   list_of_feature_importance_coef=list_of_feature_importance_coef_lasso,
                                                                                           date=date_reformatted)
+    # Plotting AR ideal lags over time:
+    lag_df = pd.DataFrame(data=list_of_ideal_lags, columns=('date_grouped', 'lag', 'value'))
+    fig, ax = plt.subplots()
+
+    plt.plot(lag_df['date_grouped'], lag_df['lag'], '-o',
+             markersize=3, color='black')
+    # 1) Setting max number of ticks, 2) adding a grid, 3) removing the top and right borders, 4) adding a title
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+    plt.grid()
+    ax.spines[['right', 'top']].set_visible(False)
+    plt.title('Optimal Autoregression (AR) over time')
+    plt.xlabel('date')
+    plt.ylabel('optimal AR lag')
 
     # Plot feature importance over time using list_of_feature_importance_coef_x
     plot_importance_features(list_of_feature_importance_coef_lr, model='Linear Regression')
@@ -233,14 +250,15 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
     plt.plot(complete_df['date_grouped'], complete_df['var_pct_difference'], '-o', label="var_pct_difference gdp", markersize=3)
     plt.plot(complete_df['date_grouped'], complete_df['ar_pct_difference'], '-o', label="ar_pct_difference gdp", markersize=3)
     plt.grid()
-    # TODO - add axis labels
+    plt.xlabel('date')
+    plt.ylabel('%pct deviation from true value')
 
     if covid:
         plt.title('GDP Nowcast model comparison: 2018 - 2023')
         leg = plt.legend(loc='upper right')
     else:
         plt.title('GDP Nowcast model comparison: 2015 - 2020')
-        leg = plt.legend(loc='upper center')
+        leg = plt.legend(loc='upper right')
     plt.show()
 
     # Calculating RMSE (Root mean squared error) for each model

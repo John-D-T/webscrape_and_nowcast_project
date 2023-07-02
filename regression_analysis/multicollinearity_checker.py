@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import plotly.figure_factory as ff
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
@@ -35,7 +37,6 @@ def checking_all_independent_variables_for_collinearity(df, covid=False):
         list_of_columns = ['frequency_baftas', 'frequency_cinema_showings', 'frequency_cinemas_near_me', 'frequency_films',
                            'monthly_gross', 'number_of_cinemas', 'sentiment', 'average_temperature', 'weighted_ranking']
 
-
     X_variables = df[list_of_columns]
     vif_data = pd.DataFrame()
     vif_data["feature"] = X_variables.columns
@@ -54,6 +55,33 @@ def checking_all_independent_variables_for_collinearity(df, covid=False):
         fig.write_image("vif_df_all_variables.png", scale=2)
     fig.show()
 
+    # PCA
+    # https://towardsdatascience.com/a-visual-learners-guide-to-explain-implement-and-interpret-principal-component-analysis-cc9b345b75be
+    pca_df = df[list_of_columns]
+    scaler = StandardScaler()
+    scaled_df = scaler.fit_transform(pca_df)
+    n_components = 6
+    pca = PCA(n_components=n_components)
+    pca_data = pca.fit_transform(scaled_df)
+    principal_components = [('PC%s' % i) for i in range(1,n_components+1)]
+    explained_variance = pca.explained_variance_ratio_
+    cumulative_variance = np.cumsum(explained_variance)
+    plt.figure(figsize=(10, n_components))
+    plt.bar(principal_components, explained_variance, color='#D3E7EE')
+    plt.plot(principal_components, cumulative_variance, 'o-', linewidth=2, color='#C6A477')
+
+    # add cumulative variance as the annotation
+    for i, j in zip(principal_components, cumulative_variance):
+        plt.annotate(str(round(j, 2)), xy=(i, j))
+
+    pca_component_df = pd.DataFrame(pca.components_, columns=pca_df.columns)
+
+    # Seaborn visualisation
+    customPalette = sns.color_palette("blend:#D3E7EE,#C6A477", as_cmap=True)
+    plt.figure(figsize=(24, 3))
+    sns.heatmap(pca_component_df, cmap=customPalette, annot=True)
+
+    # Calculating VIF for reduced variables
     if covid:
         list_of_columns_reduced = ['monthly_gross', 'frequency_cinemas_near_me',
                                    'frequency_baftas', 'average_temperature',
@@ -78,7 +106,8 @@ def checking_all_independent_variables_for_collinearity(df, covid=False):
     if covid:
         fig.write_image("vif_df_reduced_ind_variables_incl_covid.png", scale=2)
     else:
-        fig.write_image("vif_df_reduced_ind_variables.png", scale=2)
+        # fig.write_image("vif_df_reduced_ind_variables.png", scale=2)
+        fig.write_image("vif_df_reduced_ind_variables_no_sent.png", scale=2)
     fig.show()
 
     # correlation matrix (related to, but different from the VIF values)

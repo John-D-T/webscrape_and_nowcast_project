@@ -6,28 +6,6 @@ import seaborn as sns
 from common.latex_file_generator import save_df_as_image
 import matplotlib.pyplot as plt
 
-# def get_average_imdb_ratings_25k_movies():
-#     pd.set_option('display.max_rows', 500)
-#
-#     imdb_df = pd.read_csv(os.path.join(os.getcwd(), '25k_imdb_movie_dataset.csv'))
-#
-#     imdb_df['User Rating'] = imdb_df['User Rating'].replace({'K': '000', 'M': '000000'}, regex=True).map(pd.eval).astype(int)
-#     pd.to_numeric(imdb_df['User Rating'])
-#     imdb_df = imdb_df[imdb_df['user_rating_adjusted'] > 5000]
-#     imdb_df['user_rating_adjusted'] = pd.to_numeric(imdb_df['User Rating'], errors='coerce').fillna(0)
-#
-#     imdb_df['rating_adjusted'] = pd.to_numeric(imdb_df['Rating'], errors='coerce').fillna(0)
-#     pd.to_numeric(imdb_df['rating_adjusted'])
-#
-#     imdb_df['year_adjusted'] = pd.to_numeric(imdb_df['year'], errors='coerce').fillna(0)
-#     pd.to_numeric(imdb_df['year_adjusted'])
-#     imdb_df['year_adjusted'] = imdb_df['year_adjusted'].abs()
-#     imdb_df = imdb_df[imdb_df['year_adjusted'] > 1999]
-#     # https://stackoverflow.com/questions/44522741/pandas-mean-typeerror-could-not-convert-to-numeric
-#     imdb_df_grouped = imdb_df.groupby('year_adjusted')['rating_adjusted'].mean()
-#
-#     save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_25k')
-
 def get_average_imdb_ratings_all_movies():
     # 368,000 movies pre data cleaning
     pd.set_option('display.max_rows', 500)

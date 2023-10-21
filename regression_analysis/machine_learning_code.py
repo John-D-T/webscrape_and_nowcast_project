@@ -1,26 +1,24 @@
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression, Lasso, Ridge
-from sklearn import metrics
+from itertools import repeat
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from sklearn import metrics
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
-from common.latex_file_generator import save_table_as_latex, save_df_as_image
-from common.visualisations import plot_importance_features, append_to_importance_feature_coef
-from statsmodels.tsa.stattools import grangercausalitytests
-import pandas as pd
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from statsmodels.tsa.api import VAR
 from statsmodels.tsa.ar_model import AutoReg, ar_select_order
 
+from common.latex_file_generator import save_table_as_latex
+from common.visualisations import plot_importance_features, append_to_importance_feature_coef
 # Metrics
 from regression_analysis.machine_learning.easymetrics import diebold_mariano_test
 
 """
 VENV 3.7
 
-pip install tabulate
-pip install texttable
-pip install latextable
+pip install tabulate texttable latextable
 """
 
 def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
@@ -39,15 +37,8 @@ def nowcast_regression_revamped(var_df, x, y, y_with_date, covid=False):
                          'average_temperature', 'sentiment',
                          'weighted_ranking', 'gdp_lag1']
     # Create list for each model, to eventually contain predictions and be passed into a df
-    pred_lr_list = []
-    pred_gbr_list = []
-    pred_rfr_list = []
-    pred_lasso_1_list = []
-    pred_ridge_1_list = []
-    pred_lasso_01_list = []
-    pred_ridge_01_list = []
-    pred_var_list = []
-    pred_ar_list = []
+    pred_lr_list, pred_gbr_list, pred_rfr_list, pred_lasso_1_list, pred_ridge_1_list, \
+    pred_lasso_01_list, pred_ridge_01_list, pred_var_list, pred_ar_list = map(lambda x: list(x), repeat([], 9))
 
     # Create a list for each feature, to eventually store all the coefficients (feature importance) for and to plot these over time
     feature_importance_gdp_lag_lr = []

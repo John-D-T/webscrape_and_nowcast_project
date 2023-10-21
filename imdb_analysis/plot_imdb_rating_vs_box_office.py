@@ -1,15 +1,20 @@
 import pandas as pd
 import os
-import glob
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 
 """
 3.7 VENV
+pip install scipy matplotlib seaborn pandas
 """
 
 def get_average_imdb_ratings_all_movies():
+    """
+    Function to plot the average imdb ratings for movies, in order to see distributions over time. We filter on movies
+    which have more that 5000 user reviews. This is to avoid skew with lots of low grossing/low popularity movies.
+    :return:
+    """
     # 368,000 movies pre data cleaning
     pd.set_option('display.max_rows', 500)
 

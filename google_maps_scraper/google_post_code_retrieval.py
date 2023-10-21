@@ -2,7 +2,7 @@ import argparse
 import csv
 import os
 from datetime import datetime
-import time
+from common.constants import google_maps_scraper_output
 
 from termcolor import colored
 
@@ -13,23 +13,19 @@ from google_maps_scraper.googlemaps import GoogleMapsScraper
 """
 PYTHON 3.8 (64 BIT) 
 
-pip install bs4
-pip install selenium
-pip install beautifulsoup4
-pip install webdriver_manager
-pip install pandas
-pip install termcolor
-pip install time
-pip install googlemaps
-pip install argparse
-pip install pymongo
+pip install bs4 selenium beautifulsoup4 webdriver_manager pandas termcolor time googlemaps argparse pymongo
 """
 
-price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
+price_filter_dict = {
+    '£': 0,
+    '££': 1,
+    '£££': 2,
+    '££££': 3
+}
 HEADER = ['cinema_url', 'full_postcode', 'postcode']
 HEADER_W_SOURCE = ['cinema_url', 'full_postcode', 'postcode']
 
-def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
+def csv_writer(source_field, path=google_maps_scraper_output):
     outfile= str(datetime.now().date()) + '_cinema_and_post_codes.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
@@ -64,15 +60,10 @@ if __name__ == '__main__':
     with GoogleMapsScraper(debug=args.debug) as scraper:
         i = 0
         for url in list_of_all_cinema_urls:
-            # Timer to break up the scrapes
-            # print("Waiting for 30 seconds.")
-            # time.sleep(30)
-
             i += 1
             print(url)
             scraper.bypass_cookies(url, price_filter_dict[args.sort_by])
 
-            # logging to std out
             print(colored('[ Cinema and post codes collected: ' + str(i) + ']', 'cyan'))
 
             list_of_cinemas = scraper.get_cinema_postcode(url)

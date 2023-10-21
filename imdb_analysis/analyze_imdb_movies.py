@@ -1,10 +1,13 @@
-import pandas as pd
-import os
 import glob
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
+from scipy.stats import ks_2samp
 
 from common.latex_file_generator import save_df_as_image
-import matplotlib.pyplot as plt
+
 
 def get_average_imdb_ratings_all_movies():
     # 368,000 movies pre data cleaning
@@ -32,6 +35,7 @@ def get_average_imdb_ratings_all_movies():
     save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k')
 
     return imdb_df
+
 
 def concatenate_imdb_movies():
     extension = 'csv'
@@ -92,15 +96,13 @@ def plot_imdb_distributions(df):
     plt.show()
 
     # You can compare distribution of the two columns using two-sample Kolmogorov-Smirnov test, it is included in the scipy.stats:
-    from scipy.stats import ks_2samp
-
     # Here we note that none of the p values are less than 0.05 - not statistically significant at 5%
     ks_2samp_2015_2016 = ks_2samp(imdb_2015['rating'], imdb_2016['rating'])
     ks_2samp_2015_2021 = ks_2samp(imdb_2015['rating'], imdb_2021['rating'])
     ks_2samp_2012_2016 = ks_2samp(imdb_2012['rating'], imdb_2016['rating'])
     ks_2samp_2015_2022 = ks_2samp(imdb_2015['rating'], imdb_2022['rating'])
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     df = get_average_imdb_ratings_all_movies()
     plot_imdb_distributions(df)

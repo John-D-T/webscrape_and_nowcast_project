@@ -6,28 +6,21 @@ import csv
 from termcolor import colored
 import pandas as pd
 import os
+from common.constants import google_maps_scraper_output
 
 """
-pip install bs4
-pip install selenium
-pip install beautifulsoup4
-pip install webdriver_manager
-pip install pandas
-pip install termcolor
-pip install time
-pip install googlemaps
-pip install argparse
-pip install pymongo
-"""
+PYTHON 3.8 (64 BIT) 
 
+pip install bs4 selenium beautifulsoup4 webdriver_manager pandas termcolor time googlemaps argparse pymongo
+"""
 
 ind = {'most_relevant' : 0 , 'newest' : 1, 'highest_rating' : 2, 'lowest_rating' : 3 }
 HEADER = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date', 'retrieval_date', 'rating', 'username', 'n_review_user', 'n_photo_user', 'url_user']
 HEADER_W_SOURCE = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date','retrieval_date', 'rating', 'username', 'n_review_user', 'n_photo_user', 'url_user', 'url_source']
 
 
-def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
-    outfile= str(datetime.now().date()) + '_list_of_reviews.csv'
+def csv_writer(source_field, path=google_maps_scraper_output):
+    outfile = str(datetime.now().date()) + '_list_of_reviews.csv'
     targetfile = open(path + outfile, mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
 
@@ -59,8 +52,6 @@ if __name__ == '__main__':
     london_cinemas_df = (os.path.join(os.getcwd(), list_of_cinemas_csv))
 
     with GoogleMapsScraper(debug=args.debug) as scraper:
-        # with open(args.i, 'r') as urls_file:
-        #     for url in urls_file:
             url_df = pd.read_csv(london_cinemas_df)
             for row in url_df.iterrows():
                 url = row[1][2]
@@ -69,8 +60,7 @@ if __name__ == '__main__':
                 if args.place:
                     print(scraper.get_account(url))
                 else:
-                    # TODO - refactor function to not say 'sort by'
-                    error, location = scraper.sort_by(url, ind[args.sort_by])
+                    error, location = scraper.collect_all_cinemas(url, ind[args.sort_by])
 
                 if error == 0:
 

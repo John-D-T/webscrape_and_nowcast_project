@@ -7,14 +7,13 @@ import pandas as pd
 import seaborn as sns
 from linearmodels import IV2SLS
 import scipy.stats as scs
+# pip install scikit-learn (to use sklearn)
 from sklearn.linear_model import LinearRegression
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.stats.api as sms
 import statsmodels.api as sm
-from texttable import Texttable
-import latextable
 from common.latex_file_generator import save_table_as_latex
 
 from common import constants as c
@@ -26,11 +25,7 @@ from twitter_scraper.sentiment_analysis_on_tweets import sentiment_analysis
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
 
-pip install seaborn
-pip install scipy 
-pip install sklearn
-pip install statsmodel
-pip install linearmodels
+pip install seaborn scipy scikit-learn statsmodel linearmodels
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e

@@ -2,47 +2,24 @@ import argparse
 import csv
 import os
 from datetime import datetime
+from common.constants import google_maps_scraper_output, LIST_OF_LONDON_POSTCODE_AREAS, LIST_OF_NON_LONDON_POSTCODE_AREAS
 
 from termcolor import colored
 
 from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 """
-pip install bs4
-pip install selenium
-pip install beautifulsoup4
-pip install webdriver_manager
-pip install pandas
-pip install termcolor
-pip install time
-pip install googlemaps
-pip install argparse
-pip install pymongo
+PYTHON 3.8 (64 BIT) 
+
+pip install bs4 selenium beautifulsoup4 webdriver_manager pandas termcolor time googlemaps argparse pymongo
 """
 
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
 HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
 HEADER_W_SOURCE = ['cinema_name', 'category', 'cinema_url', 'postcode_category', 'url_source']
 
-LIST_OF_NON_LONDON_POSTCODE_AREAS = ['St Albans', 'Brighton', 'Bromley', 'Cambridge', 'Chelmsford', 'Colchester', 'Croydon',
-                     'Canterbury', 'Dartford', 'Enfield', 'Guildford', 'Harrow', 'Hemel Hempstead', 'Ilford',
-                     'Kingston upon Thames', 'Rochester', 'Milton Keynes', 'Northampton', 'Oxford', 'Portsmouth',
-                     'Reading', 'Redhill', 'Romford', 'Stevenage', 'Slough', 'Sutton', 'Swindon', 'Southampton',
-                     'Southend-on-Sea', 'Tonbridge', 'Twickenham', 'Southall', 'Watford', 'Bath', 'Bournemouth',
-                     'Bristol', 'Dorchester', 'Exeter', 'Gloucester', 'Hereford', 'Plymouth', 'Swindon', 'Salisbury',
-                     'Taunton', 'Torquay', 'Truro', 'Cambridge', 'Chelmsford', 'Colchester', 'Ipswich', 'Norwich',
-                     'Peterborough', 'Southend-on-Sea', 'Birmingham', 'Coventry', 'Dudley', 'Hereford',
-                     'Llandrindod Wells', 'Stoke-on-Trent', 'Shrewsbury', 'Telford', 'Worcester', 'Walsall',
-                     'Wolverhampton', 'Derby', 'Leicester', 'Lincoln', 'Nottingham', 'Northampton', 'Bradford',
-                     'Doncaster', 'Huddersfield', 'Harrogate', 'Hull', 'Leeds', 'Sheffield', 'Wakefield', 'York',
-                     'Durham', 'Darlington', 'Newcastle upon Tyne', 'Sunderland', 'Cleveland']
-# LIST_OF_NON_LONDON_POSTCODE_AREAS = ['Cleveland+UK']
 
-LIST_OF_LONDON_POSTCODE_AREAS = ['Central London', 'East London', 'North London', 'Northeast London', 'Northwest London',
-                                      'Southeast London', 'Southwest London', 'West London']
-# LIST_OF_LONDON_POSTCODE_AREAS = []
-
-def csv_writer(source_field, path='C:/Users/johnd/OneDrive/Documents/cbq/third_proper_year/diss/code/scraping_project/google_maps_scraper/output'):
+def csv_writer(source_field, path=google_maps_scraper_output):
     outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
@@ -90,7 +67,6 @@ if __name__ == '__main__':
 
             while n < args.N:
 
-                # logging to std out
                 print(colored('[ Cinemas collected: ' + str(n) + ']', 'cyan'))
 
                 list_of_cinemas = scraper.get_cinemas(n, postcode_category)

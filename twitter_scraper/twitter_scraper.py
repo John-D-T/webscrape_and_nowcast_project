@@ -21,6 +21,7 @@ import datetime
 import time
 import os
 
+
 def twitter_scrape(keyword, year, list_of_processed_files, dry_run=False):
     for month in range(1, 13):
         for day in range(1, 32):
@@ -763,6 +764,8 @@ if __name__ == '__main__':
     list_of_processed_files = obtain_list_of_unprocessed_files(keyword)
     years = [year for year in range(2021, 2023)]
     for year in years:
+        # Run scrape
         twitter_scrape(keyword=keyword, year=year, list_of_processed_files=list_of_processed_files, dry_run=dry_run)
+
         if not dry_run:
             time.sleep(3600)

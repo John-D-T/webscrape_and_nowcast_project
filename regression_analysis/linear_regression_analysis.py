@@ -7,27 +7,25 @@ import pandas as pd
 import seaborn as sns
 from linearmodels import IV2SLS
 import scipy.stats as scs
+# pip install scikit-learn (to use sklearn)
 from sklearn.linear_model import LinearRegression
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.stats.api as sms
 import statsmodels.api as sm
+from common.latex_file_generator import save_table_as_latex
 
 from common import constants as c
 from common.latex_file_generator import save_model_as_image
-from regression_analysis.machine_learning_code import nowcast_regression
+from regression_analysis.machine_learning_code import nowcast_regression_revamped
 from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity
 from twitter_scraper.sentiment_analysis_on_tweets import sentiment_analysis
 
 """
 PYTHON 3.7 (64 BIT) - Found to be more compatible. No issues when installing scipy and scikit learn
 
-pip install seaborn
-pip install scipy 
-pip install sklearn
-pip install statsmodel
-pip install linearmodels
+pip install seaborn scipy scikit-learn statsmodel linearmodels
 
 Linear regression notes:
 https://towardsdatascience.com/demystifying-ml-part1-basic-terminology-linear-regression-a89500a9e
@@ -113,7 +111,7 @@ def univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df):
     f.write(endtex)
     f.close()
 
-def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=False):
+def multivariate_linear_regression_pre_covid(gdp_df, weather_df, box_office_df, monthly_admissions_df, box_office_weightings_df, google_trends_df, twitter_scrape_df):
     '''
     Preparing regression input
     '''
@@ -123,74 +121,59 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
 
     merged_df = pd.merge(pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped']), twitter_scrape_df, on=['date_grouped'])
 
-    multivariate_check = checking_all_independent_variables_for_collinearity(df = merged_df)
+    merged_df['weighted_ranking'] = merged_df['monthly_gross_ratio_rank_1'] * 1 + merged_df['monthly_gross_ratio_rank_2'] * 2 \
+                                    + merged_df['monthly_gross_ratio_rank_3'] * 3 + merged_df['monthly_gross_ratio_rank_4'] * 4 \
+                                    + merged_df['monthly_gross_ratio_rank_5'] * 5 + merged_df['monthly_gross_ratio_rank_6'] * 6 \
+                                    + merged_df['monthly_gross_ratio_rank_7'] * 7 + merged_df['monthly_gross_ratio_rank_8'] * 8 \
+                                    + merged_df['monthly_gross_ratio_rank_9'] * 9 + merged_df['monthly_gross_ratio_rank_10'] * 10 \
+                                    + merged_df['monthly_gross_ratio_rank_11'] * 11 + merged_df['monthly_gross_ratio_rank_12'] * 12 \
+                                    + merged_df['monthly_gross_ratio_rank_13'] * 13 + merged_df['monthly_gross_ratio_rank_14'] * 14 \
+                                    + merged_df['monthly_gross_ratio_rank_15'] * 15
+
+    features = checking_all_independent_variables_for_collinearity(df=merged_df)
 
     merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
 
-    # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
-    merged_df.rename(columns={"monthly_gross": "monthly gross", "frequency_academy_awards": "frequency academy awards"}, inplace=True)
+    # Set the cutoff date, based on when covid started in the UK
+    cutoff_date = pd.to_datetime('2020-02-01')
 
-    # Add dummy variable for covid lockdown
-    list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
-                      pd.to_datetime('2020-06-01'), pd.to_datetime('2020-07-01'), pd.to_datetime('2020-09-01'),
-                      pd.to_datetime('2020-10-01'), pd.to_datetime('2020-11-01'), pd.to_datetime('2020-12-01'),
-                      pd.to_datetime('2021-01-01'), pd.to_datetime('2021-02-01'), pd.to_datetime('2021-03-01'),
-                      pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
-    merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
+    # Filter the DataFrame
+    merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
 
-    if covid_check:
-        # Set the cutoff date, based on when covid started in the UK
-        cutoff_date = pd.to_datetime('2020-02-01')
+    merged_df = merged_df.sort_values(by='date_grouped')
 
-        # Filter the DataFrame
-        merged_df = merged_df[merged_df['date_grouped'] < cutoff_date]
-
-    merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+    merged_df['date_grouped_ordinal'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
 
     # Add lags for the dependent variable
     merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
 
     # have to filter out null values in gdp_lag1 - losing dimensionality?
     merged_df = merged_df.dropna(subset=["gdp_lag1"])
+    features.append('gdp_lag1')
+    x_ols = merged_df[features]
+    y = merged_df['gdp']
+    y_with_date = merged_df[['gdp', 'date_grouped']]
 
-    # Create a ratio on the weightings
-    merged_df['ranking_ratio_1_3'] = merged_df['monthly_gross_ratio_rank_1'] - merged_df['monthly_gross_ratio_rank_15']
+    features_alt = features
+    features_alt.append('date_grouped')
+    x_ols_alt = merged_df[features_alt]
 
-    # TODO - add covid_lockdown only when time period includes covid
-    X_2SLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'sentiment']]
-    X_Z_2SLS = merged_df['monthly gross']
-    X_OLS = merged_df[['ranking_ratio_1_3',
-                   'frequency_cinemas_near_me', 'gdp_lag1', 'monthly gross', 'sentiment','frequency academy awards']]
-    Y = merged_df['gdp']
-    Z = merged_df['frequency academy awards']
-
-    # initiating linear regression
-    # reg = LinearRegression()
-    # reg.fit(X_OLS, Y)
-
-    X_OLS = add_constant(X_OLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
-    X_2SLS = add_constant(X_2SLS)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+    x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
 
     '''
     Now plotting regression
     '''
 
+
     # OLS Regression using linearmodels - Has robust covariance
-    ols_model = IV2SLS(dependent=Y, exog=X_OLS, endog=None, instruments=None).fit()
-
-    # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
-    save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
-
-    resultIV = IV2SLS(dependent=Y, exog=X_2SLS, endog=X_Z_2SLS, instruments=Z).fit()
-
-    save_model_as_image(model=resultIV, file_name='multivariate_2sls_regression', lin_reg=True)
+    ols_model = IV2SLS(dependent=y, exog=x_ols, endog=None, instruments=None).fit()
+    # Leaving this out as we're going for a nowcast
+    # # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression', lin_reg=True)
 
     '''
     Now checking residuals
     '''
-
-
 
     # QQ Plot - https://towardsdatascience.com/q-q-plots-explained-5aa8495426c0
     fig = plt.figure()
@@ -207,17 +190,149 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
 
     # Plot outliers and check if any residuals are above 4 or < -4
     merged_df['residuals'] = ols_model.resids
-    max_residual = merged_df['residuals'].max()
-    min_residual = merged_df['residuals'].min()
+    max_residual = merged_df['residuals'].max()  # 1.164928414420217
+    min_residual = merged_df['residuals'].min()  # -1.3439102445690594
+
+    # Finding residuals which are > 0.6 and < -0.6
+    filtered_merged_df = merged_df[(merged_df.residuals > 0.6) | (merged_df.residuals < -0.6)]
+    filtered_merged_df = filtered_merged_df[['date_grouped', 'residuals']]
+    plt.plot(filtered_merged_df['date_grouped'], filtered_merged_df['residuals'], 'o', color='black')
 
     # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
-    dw_test = durbin_watson(ols_model.resids) # 2.030877
+    dw_test = durbin_watson(ols_model.resids) # 2.8126133956116295
 
     # Homocedasticity test
         # Ho = Homocedasticity = P > 0.05
         # Ha = There's no homocedasticity = p <=0.05
 
-    model = sm.OLS(Y, X_OLS).fit()
+    model = sm.OLS(y, x_ols).fit()
+
+    stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
+
+    print(f'Test stat: {stat}') # 17.91253203099973
+    print(f'p-Value: {p}') # 0.012370934841518211
+    print(f'F-Value: {f}') # 2.81236654211901
+    print(f'f_p_value: {fp}') # 0.009855514708688591
+
+    plt.scatter(y=model.resid, x=model.predict(), color='black', alpha=0.5, s=20)
+    plt.hlines(y=0, xmin=0, xmax=4, color='orange')
+    plt.xlim(80,100)
+    plt.xlabel('Predicted values')
+    plt.ylabel('Residuals')
+    plt.title('Plotted residuals')
+    plt.show()
+
+    # Generate Latex Table with all results
+    rows = [['Model', 'durbin watson', 'min residual', 'max residual', 'het breuschpagan p value'],
+            ['Pre covid LR', dw_test, min_residual, max_residual, p]]
+
+    save_table_as_latex(file_name='linear_reg_violation_pre_covid', rows=rows, header_count=5,
+                        caption="Linear Regression violation checks (pre covid)")
+
+    '''
+    Nowcasting model
+    '''
+    var_variables = features
+    var_variables.append('gdp')
+    var_variables.append('date_grouped')
+    var_df = merged_df[var_variables]
+
+    nowcast_regression_revamped(var_df, x_ols_alt, y, y_with_date)
+
+    return rows
+
+
+def multivariate_linear_regression_incl_covid(gdp_df, weather_df, box_office_df, box_office_weightings_df,
+                                              google_trends_df, twitter_scrape_df, rows, covid_check=False):
+    '''
+    Preparing regression input
+    '''
+
+    # clearing out existing graphs
+    plt.clf()
+
+    merged_df = pd.merge(pd.merge(pd.merge(pd.merge(box_office_df, gdp_df, on=['date_grouped']), box_office_weightings_df, on=['date_grouped']), google_trends_df, on=['date_grouped']), weather_df, on=['date_grouped'])
+
+    merged_df['weighted_ranking'] = merged_df['monthly_gross_ratio_rank_1'] * 1 + merged_df['monthly_gross_ratio_rank_2'] * 2 \
+                                    + merged_df['monthly_gross_ratio_rank_3'] * 3 + merged_df['monthly_gross_ratio_rank_4'] * 4 \
+                                    + merged_df['monthly_gross_ratio_rank_5'] * 5 + merged_df['monthly_gross_ratio_rank_6'] * 6 \
+                                    + merged_df['monthly_gross_ratio_rank_7'] * 7 + merged_df['monthly_gross_ratio_rank_8'] * 8 \
+                                    + merged_df['monthly_gross_ratio_rank_9'] * 9 + merged_df['monthly_gross_ratio_rank_10'] * 10 \
+                                    + merged_df['monthly_gross_ratio_rank_11'] * 11 + merged_df['monthly_gross_ratio_rank_12'] * 12 \
+                                    + merged_df['monthly_gross_ratio_rank_13'] * 13 + merged_df['monthly_gross_ratio_rank_14'] * 14 \
+                                    + merged_df['monthly_gross_ratio_rank_15'] * 15
+
+    features = checking_all_independent_variables_for_collinearity(df = merged_df, covid=True)
+
+    merged_df['date_grouped'] = pd.to_datetime(merged_df['date_grouped'])
+
+    # rename columns to fix issue where the underscores for monthly_gross and frequency_academy_awards mess up the syntax
+    # merged_df.rename(columns={"monthly_gross": "monthly gross"}, inplace=True)
+
+    # Add dummy variable for covid lockdown
+    list_of_months = [pd.to_datetime('2020-03-01'), pd.to_datetime('2020-04-01'), pd.to_datetime('2020-05-01'),
+                      pd.to_datetime('2020-06-01'), pd.to_datetime('2020-07-01'), pd.to_datetime('2020-09-01'),
+                      pd.to_datetime('2020-10-01'), pd.to_datetime('2020-11-01'), pd.to_datetime('2020-12-01'),
+                      pd.to_datetime('2021-01-01'), pd.to_datetime('2021-02-01'), pd.to_datetime('2021-03-01'),
+                      pd.to_datetime('2021-04-01'), pd.to_datetime('2021-05-01')]
+    merged_df['cinema_lockdown'] = merged_df['date_grouped'].apply(lambda x: 1 if x in list_of_months else 0)
+
+    #merged_df['date_grouped'] = merged_df['date_grouped'].map(ddt.datetime.toordinal)
+
+    # Add lags for the dependent variable
+    merged_df['gdp_lag1'] = merged_df['gdp'].shift(1)
+
+    # have to filter out null values in gdp_lag1 - losing dimensionality?
+    merged_df = merged_df.dropna(subset=["gdp_lag1"])
+
+    features.extend(['gdp_lag1', 'cinema_lockdown'])
+    x_ols = merged_df[features]
+    y = merged_df['gdp']
+    y_with_date = merged_df[['gdp', 'date_grouped']]
+
+    features_alt = features
+    features_alt.append('date_grouped')
+    x_ols_alt = merged_df[features_alt]
+
+    x_ols = add_constant(x_ols)    # to add constant value in the model, to tell us to fit for the b in 'y = mx + b'
+
+    # OLS Regression using linearmodels - Has robust covariance
+    ols_model = IV2SLS(dependent=y, exog=x_ols, endog=None, instruments=None).fit()
+    # Leaving this out as we're going for a nowcast
+    # Summary of the OLS regression - https://medium.com/swlh/interpreting-linear-regression-through-statsmodels-summary-4796d359035a
+    # save_model_as_image(model=ols_model, file_name='multivariate_ols_regression_incl_covid', lin_reg=True)
+
+    '''
+    Now checking residuals
+    '''
+
+    # QQ Plot - https://towardsdatascience.com/q-q-plots-explained-5aa8495426c0
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    scs.probplot(ols_model.resids, dist='norm', plot=plt)
+
+    ax.get_lines()[0].set_markerfacecolor('black')
+    ax.get_lines()[0].set_markeredgecolor('black')
+    ax.get_lines()[1].set_color('black')
+    plt.title('QQ Plot - incl. covid')
+    plt.show()
+
+    plt.clf()
+
+    # Plot outliers and check if any residuals are above 4 or < -4
+    # Note that for extreme residuals, check the QQplot to see if it's one outlier exclusively
+    merged_df['residuals'] = ols_model.resids
+    max_residual = merged_df['residuals'].max() # 8.078761020132063
+    min_residual = merged_df['residuals'].min() # -12.15981483406162
+
+    # Check for serial correlation using a Durbin Watson test - https://www.statology.org/durbin-watson-test-python/
+    dw_test = durbin_watson(ols_model.resids) # 1.164954221660367
+
+    # Homocedasticity test
+        # Ho = Homocedasticity = P > 0.05
+        # Ha = There's no homocedasticity = p <=0.05
+
+    model = sm.OLS(y, x_ols).fit()
 
     stat, p, f, fp = sms.het_breuschpagan(model.resid, model.model.exog)
 
@@ -233,14 +348,23 @@ def multivariate_linear_regression(gdp_df, weather_df, box_office_df, monthly_ad
     plt.ylabel('Residuals')
     plt.show()
 
+    # Generate Latex Table with all results
+    rows_incl_covid = [['Model', 'durbin watson', 'min residual', 'max residual', 'het breuschpagan p value'],
+                        ['Incl covid LR', dw_test, min_residual, max_residual, p]]
+
+    rows_incl_covid.append(rows[1])
+
+    save_table_as_latex(file_name='linear_reg_violation_incl_covid', rows=rows_incl_covid, header_count=5,
+                        caption="Linear Regression violation checks (including covid)")
+
     '''
     Nowcasting model
     '''
-
-    nowcast_regression(X_OLS, Y)
-
-    # TODO - add a nowcast including covid
-
+    var_variables = features
+    var_variables.append('gdp')
+    var_variables.append('date_grouped')
+    var_df = merged_df[var_variables]
+    nowcast_regression_revamped(var_df, x_ols_alt, y, y_with_date, covid=True)
 
 class GeneratingDataSourceDataframes():
 
@@ -466,6 +590,10 @@ class GeneratingDataSourceDataframes():
         '''
 
         # generating dataframes
+        baftas_df = pd.read_csv(
+            os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', c.baftas + c.csv_extension),
+            skiprows=[0, 1]) \
+            .rename(columns={'%s: (United Kingdom)' % c.baftas: 'frequency_%s' % c.baftas})
         academy_awards_df = pd.read_csv(
             os.path.join(os.path.dirname(os.getcwd()), 'google_trends_scraper', c.academy_awards + c.csv_extension),
             skiprows=[0, 1]) \
@@ -489,13 +617,21 @@ class GeneratingDataSourceDataframes():
             .rename(columns={'%s: (United Kingdom)' % c.films_near_me.replace('_', ' '): 'frequency_%s' % c.films_near_me})
 
         # merge dataframes
-        google_trends_df = pd.merge(pd.merge(
+        google_trends_df = pd.merge(pd.merge(pd.merge(
             pd.merge(pd.merge(academy_awards_df, cinema_showings_df, on='Month'), cinemas_near_me_df, on='Month'),
-            films_df, on='Month'), films_near_me_df, on='Month')
+            films_df, on='Month'), films_near_me_df, on='Month'), baftas_df, on='Month')
         google_trends_df = google_trends_df.rename(columns={'Month': 'date_grouped'})
         google_trends_df['date_grouped'] = pd.to_datetime(google_trends_df['date_grouped']).apply(
             lambda x: '{year}-{month}'.format(year=x.year, month=x.month))
         return google_trends_df
+
+def clean_up():
+    folder_path = os.path.join(os.getcwd())
+    extensions = ['.aux', '.txt', '.tex', '.log']
+
+    for filename in os.listdir(folder_path):
+        if any(filename.endswith(ext) for ext in extensions):
+            os.remove(os.path.join(folder_path, filename))
 
 if __name__ == '__main__':
     # Setting up config to avoid truncation of columns or column names:
@@ -524,4 +660,10 @@ if __name__ == '__main__':
 
     univariate_regression_monthly_admission_gdp(gdp_df, monthly_admission_df)
 
-    multivariate_linear_regression(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df, covid_check=True)
+    rows = multivariate_linear_regression_pre_covid(weather_df, gdp_df, box_office_df, monthly_admission_df, box_office_weightings_df, google_trends_df, twitter_scrape_df)
+
+    multivariate_linear_regression_incl_covid(weather_df, gdp_df, box_office_df, box_office_weightings_df,
+                                              google_trends_df, twitter_scrape_df, rows)
+
+    clean_up()
+

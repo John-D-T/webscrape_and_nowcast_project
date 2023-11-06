@@ -15,6 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 """
+PYTHON 3.8 (64 BIT) 
+
 pip install bs4
 pip install selenium
 pip install webdriver_manager
@@ -45,7 +47,7 @@ class GoogleMapsScraper:
 
         return True
 
-    def sort_by(self, url, ind):
+    def collect_all_cinemas(self, url, ind):
 
         self.driver.get(url)
         self.__click_on_cookie_agreement()
@@ -80,18 +82,11 @@ class GoogleMapsScraper:
 
                 self.driver.execute_script("arguments[0].click();", more_reviews)
 
-                # # TODO - figure out which element is the sort button (do I even need this?
-                # sort_menu = self.driver.find_element('css selector', 'span.DVeyrd')
-                # menu_bt = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value=\'Sort\']')))
-                # menu_bt = wait.until(EC.element_to_be_clickable(('css selector', 'button.g88MCb.S9kvJb')))
-                # menu_bt.click()
-
                 clicked = True
                 time.sleep(3)
             except Exception as e:
                 location = 'ERROR'
                 tries += 1
-                # self.logger.info('Failed to click sorting button')
                 self.logger.info('Failed to click into reviews')
 
             # failed to open the dropdown
@@ -109,7 +104,6 @@ class GoogleMapsScraper:
 
         return 0, location
 
-    # Leaving as optional as we don't need to sort restaurants
     def bypass_cookies(self, url, ind):
 
         self.driver.get(url)
@@ -148,8 +142,6 @@ class GoogleMapsScraper:
 
     def get_cinemas(self, offset, postcode_category):
 
-        # scroll to load restaurants
-
         # wait for other reviews to load (ajax)
         time.sleep(4)
 
@@ -172,7 +164,6 @@ class GoogleMapsScraper:
 
         t = 0
         while True:
-            # print(t)
             t = t + 1
             # Scroll down to bottom
             self.driver.execute_script('arguments[0].scrollTo(0, arguments[0].scrollHeight)', scrolling_element)
@@ -182,7 +173,6 @@ class GoogleMapsScraper:
 
             # Calculate new scroll height and compare with last scroll height
             new_height = self.driver.execute_script("return arguments[0].scrollHeight", scrolling_element)
-            # print(new_height)
             if new_height == last_height:
                 break
             last_height = new_height
@@ -280,31 +270,26 @@ class GoogleMapsScraper:
         item = {}
 
         try:
-            # TODO: Subject to changes
             id_review = review['data-review-id']
         except Exception as e:
             id_review = None
 
         try:
-            # TODO: Subject to changes
             username = review['aria-label']
         except Exception as e:
             username = None
 
         try:
-            # TODO: Subject to changes
             review_text = self.__filter_string(review.find('span', class_='wiI7pd').text)
         except Exception as e:
             review_text = None
 
         try:
-            # TODO: Subject to changes
             rating = float(review.find('span', class_='kvMYJc')['aria-label'].split(' ')[1])
         except Exception as e:
             rating = None
 
         try:
-            # TODO: Subject to changes
             relative_date = review.find('span', class_='rsqaWe').text
         except Exception as e:
             relative_date = None
@@ -348,6 +333,7 @@ class GoogleMapsScraper:
         item['url_user'] = user_url
 
         return item
+
 
     def __parse_cinema(self, review, postcode):
         """

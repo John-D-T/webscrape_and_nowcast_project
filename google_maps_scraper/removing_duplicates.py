@@ -1,11 +1,11 @@
 import pandas as pd
-from functools import wraps
 import time
 import os
 
 """
 PYTHON 3.8 (64 BIT)
 """
+
 
 def timeit(func):
     def timeit_wrapper(*args, **kwargs):
@@ -19,10 +19,14 @@ def timeit(func):
 
 
 @timeit
-def worker():
-    list_of_cinemas_csv = 'output\\2023-03-08_list_of_cinemas.csv'
-    list_of_cinemas_refined_csv = 'output\\2023-03-08_list_of_cinemas_refined.csv'
-    london_cinemas_df = pd.read_csv(os.path.join(os.getcwd(), list_of_cinemas_csv))
+def worker(input_csv, output_csv):
+    """
+    Function to take in an unrefined csv of cinemas, and then drop duplicates and remove irrelevant data, and
+    return a refined csv of cinemas
+    :param input_csv: path of unrefined csv of cinemas
+    :param output_csv: path of refined csv of cinemas
+    """
+    london_cinemas_df = pd.read_csv(os.path.join(os.getcwd(), input_csv))
     london_cinemas_refined_df = london_cinemas_df.drop_duplicates(subset=['cinema_name', 'cinema_url'])
     london_cinemas_refined_df = london_cinemas_refined_df[(london_cinemas_refined_df.category == 'Cinema') |
                                                            (london_cinemas_refined_df.category == 'Outdoor cinema') |
@@ -32,7 +36,9 @@ def worker():
                                                            (london_cinemas_refined_df.category == 'Events Venue')]
 
     # write to csv file
-    london_cinemas_refined_df.to_csv(os.path.join(os.getcwd(), list_of_cinemas_refined_csv))
+    london_cinemas_refined_df.to_csv(os.path.join(os.getcwd(), output_csv))
+
 
 if __name__ == "__main__":
-    worker()
+    worker(input_csv='output\\2023-03-08_list_of_cinemas.csv',
+           output_csv='output\\2023-03-08_list_of_cinemas_refined.csv')

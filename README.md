@@ -9,10 +9,5 @@ This repository is to facilitate exploring the use of cinema data and web scrapi
     - `/machine_learning` code to pass data into various machine learning models, to ultimately nowcast data.
 - `/population_cinema_heatmap` using geospatial data to general a heat map of the UK
 
-This is still a work in progress, so please bear with the lackluster documentation.
- ## WIP
-Filler text
-- `--i`: filler
 
-
-**Note**: 
+**Note**: This is still a work in progress, so please bear with the lackluster documentation.

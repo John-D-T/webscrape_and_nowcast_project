@@ -1,7 +1,13 @@
 # Web Scraping and Nowcasting Project 
 Hi! Welcome - this repository was created to facilitate exploring the use of cinema data and web scraping techniques as an alternative economic proxy for economic activity in the UK (United Kingdom). 
 
+Context:
+
+![alt text](resources/images/heatmaps.png?raw=true)
+
 The high-level logic of the pipeline is as follows:
+
+![alt text](resources/images/pipeline.png?raw=true)
 
 - Obtain data from numerous sources. This includes google reviews, google trends, twitter, imdb, and bfi box office data.
 
@@ -10,8 +16,16 @@ The high-level logic of the pipeline is as follows:
 - Generate regressions and run checks. We check for multi-collinearity, distribution of residuals, auto-correlation, and homoskedasticity 
 
 - Analyze our regressions. We then use machine learning to nowcast GDP using the data 
+  - The models we used included:
+    - Note: For the models, we ran a 48 month/1 month test train split, over a 5 year span.
+
+![alt text](resources/images/nowcasting_ml_models.png?raw=true)
 
 - Plot our nowcasting results.
+
+Our results:
+
+![alt text](resources/images/results_table.png?raw=true)
 
 **Breakdown of different folders**
 

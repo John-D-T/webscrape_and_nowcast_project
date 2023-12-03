@@ -2,8 +2,6 @@
 
 Hi! Welcome - this repository was created to facilitate exploring the use of cinema data and web scraping techniques as an alternative economic proxy for economic activity in the UK (United Kingdom). 
 
-(note: the images in this readme are best read with a white background)
-
 Context:
 
 In economic analysis, there has been a trend of using unconventional indicators. 
@@ -21,10 +19,7 @@ This was a light check to investigate this, and we found a strong overlap
 ![alt text](resources/images/heatmaps.png?raw=true)
 
 Due to the volatile nature of events such as covid, we wanted to focus on more short term forecasting: Nowcasting. 
-It is less known, but used in capturing current state of the economy
-
-
-
+It is less known, but used in capturing current state of the economy.
 
 The high-level logic of the pipeline is as follows:
 

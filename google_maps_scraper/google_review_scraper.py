@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from google_maps_scraper.googlemaps import GoogleMapsScraper
-from datetime import datetime
 import argparse
 import csv
-from termcolor import colored
-import pandas as pd
 import os
-from common.constants import ScrapingProjectConstants as c
+from datetime import datetime
 
+import pandas as pd
+from termcolor import colored
+
+from common.constants import ScrapingProjectConstants as c
+from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 """
 PYTHON 3.8 (64 BIT) 

@@ -2,9 +2,10 @@ import argparse
 import csv
 import os
 from datetime import datetime
-from common.constants import ScrapingProjectConstants as c
+
 from termcolor import colored
 
+from common.constants import ScrapingProjectConstants as c
 from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 """

@@ -16,7 +16,7 @@ import statsmodels.stats.api as sms
 import statsmodels.api as sm
 from common.latex_file_generator import save_table_as_latex
 
-from common import constants as c
+from common.constants import ScrapingProjectConstants as c
 from common.latex_file_generator import save_model_as_image
 from regression_analysis.machine_learning_code import nowcast_regression_revamped
 from regression_analysis.multicollinearity_checker import checking_all_independent_variables_for_collinearity

@@ -2,12 +2,11 @@ import argparse
 import csv
 import os
 from datetime import datetime
-from common.constants import google_maps_scraper_output
-
-from termcolor import colored
 
 import pandas as pd
+from termcolor import colored
 
+from common.constants import ScrapingProjectConstants as c
 from google_maps_scraper.googlemaps import GoogleMapsScraper
 
 """
@@ -25,7 +24,8 @@ price_filter_dict = {
 HEADER = ['cinema_url', 'full_postcode', 'postcode']
 HEADER_W_SOURCE = ['cinema_url', 'full_postcode', 'postcode']
 
-def csv_writer(source_field, path=google_maps_scraper_output):
+
+def csv_writer(source_field, path=c.google_maps_scraper_output):
     outfile= str(datetime.now().date()) + '_cinema_and_post_codes.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)

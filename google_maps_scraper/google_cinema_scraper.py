@@ -2,8 +2,7 @@ import argparse
 import csv
 import os
 from datetime import datetime
-from common.constants import google_maps_scraper_output, LIST_OF_LONDON_POSTCODE_AREAS, LIST_OF_NON_LONDON_POSTCODE_AREAS
-
+from common.constants import ScrapingProjectConstants as c
 from termcolor import colored
 
 from google_maps_scraper.googlemaps import GoogleMapsScraper
@@ -19,7 +18,7 @@ HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
 HEADER_W_SOURCE = ['cinema_name', 'category', 'cinema_url', 'postcode_category', 'url_source']
 
 
-def csv_writer(source_field, path=google_maps_scraper_output):
+def csv_writer(source_field, path=c.google_maps_scraper_output):
     outfile= str(datetime.now().date()) + '_list_of_cinemas.csv'
     targetfile = open(os.path.join(path, outfile), mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)
@@ -51,10 +50,10 @@ if __name__ == '__main__':
     REFINED_POSTCODE_CATEGORIES = []
 
     url_prefix = 'https://www.google.com/maps/search/cinemas+in+'
-    for area in LIST_OF_LONDON_POSTCODE_AREAS:
+    for area in c.LIST_OF_LONDON_POSTCODE_AREAS:
         REFINED_POSTCODE_CATEGORIES.append(url_prefix + area.replace(' ', '+'))
 
-    for area in LIST_OF_NON_LONDON_POSTCODE_AREAS:
+    for area in c.LIST_OF_NON_LONDON_POSTCODE_AREAS:
         REFINED_POSTCODE_CATEGORIES.append(url_prefix + area.replace(' ', '+'))
 
     with GoogleMapsScraper(debug=args.debug) as scraper:

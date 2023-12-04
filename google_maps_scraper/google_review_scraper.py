@@ -6,7 +6,8 @@ import csv
 from termcolor import colored
 import pandas as pd
 import os
-from common.constants import google_maps_scraper_output
+from common.constants import ScrapingProjectConstants as c
+
 
 """
 PYTHON 3.8 (64 BIT) 
@@ -19,7 +20,7 @@ HEADER = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date', 'r
 HEADER_W_SOURCE = ['location', 'cinema_name', 'id_review', 'caption', 'relative_date','retrieval_date', 'rating', 'username', 'n_review_user', 'n_photo_user', 'url_user', 'url_source']
 
 
-def csv_writer(source_field, path=google_maps_scraper_output):
+def csv_writer(source_field, path=c.google_maps_scraper_output):
     outfile = str(datetime.now().date()) + '_list_of_reviews.csv'
     targetfile = open(path + outfile, mode='a', encoding='utf-8', newline='\n')
     writer = csv.writer(targetfile, quoting=csv.QUOTE_MINIMAL)

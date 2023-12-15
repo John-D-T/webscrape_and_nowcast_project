@@ -10,6 +10,23 @@ from common.latex_file_generator import save_df_as_image
 
 
 def get_average_imdb_ratings_all_movies():
+    """
+    Function to:
+
+    1. Load in csv containing all imdb ratings (thanks to concatenate_imdb_movies())
+    2. Filter on where:
+            'votes' column is not NULL
+                (optional filter on movies with more than 5000 votes)
+            the movies gross more than 1 million (1,000,000) USD
+            the movies were after 1999 (to match scope of study)
+    3. Return this dataframe
+
+    BONUS - the function also:
+        - aggregates the dataframe in order to get the year and average rating for that year
+        - save this to a pdf
+
+    :return:
+    """
     # 368,000 movies pre data cleaning
     pd.set_option('display.max_rows', 500)
 
@@ -38,6 +55,10 @@ def get_average_imdb_ratings_all_movies():
 
 
 def concatenate_imdb_movies():
+    """
+    One time function to combine all the individual imdb files into one.
+    :return:
+    """
     extension = 'csv'
     path = os.path.join(os.getcwd(), 'genre')
     os.chdir(path)
@@ -50,59 +71,53 @@ def concatenate_imdb_movies():
 
 
 def plot_imdb_distributions(df):
+    """
+    Function to plot ratings for all imdb movies over the years
+
+    :param df: dataframe containing imdb ratings for movies.
+    :return:
+    """
 
     # We split the ratings by year (to plot as seperate lines)
-    imdb_2022 = df.loc[df['year_adjusted'] == 2022]
-    imdb_2021 = df.loc[df['year_adjusted'] == 2021]
-    imdb_2020 = df.loc[df['year_adjusted'] == 2020]
-    imdb_2019 = df.loc[df['year_adjusted'] == 2019]
-    imdb_2018 = df.loc[df['year_adjusted'] == 2018]
-    imdb_2017 = df.loc[df['year_adjusted'] == 2017]
-    imdb_2016 = df.loc[df['year_adjusted'] == 2016]
-    imdb_2015 = df.loc[df['year_adjusted'] == 2015]
-    imdb_2014 = df.loc[df['year_adjusted'] == 2014]
-    imdb_2013 = df.loc[df['year_adjusted'] == 2013]
-    imdb_2012 = df.loc[df['year_adjusted'] == 2012]
-    imdb_2011 = df.loc[df['year_adjusted'] == 2011]
-    imdb_2010 = df.loc[df['year_adjusted'] == 2010]
-    imdb_2009 = df.loc[df['year_adjusted'] == 2009]
-    imdb_2008 = df.loc[df['year_adjusted'] == 2008]
-    imdb_2007 = df.loc[df['year_adjusted'] == 2007]
-    imdb_2006 = df.loc[df['year_adjusted'] == 2006]
-    imdb_2005 = df.loc[df['year_adjusted'] == 2005]
-    imdb_2004 = df.loc[df['year_adjusted'] == 2004]
+    def generate_imdb_dictionary(df):
+        years = [year for year in range(2004, 2023, 1)]
+        return {y: df[df['year_adjusted'] == y] for y in years}
 
-    sns.distplot(imdb_2004[['rating']], hist=False, rug=True, label='2004')
-    sns.distplot(imdb_2005[['rating']], hist=False, rug=True, label='2005')
-    sns.distplot(imdb_2006[['rating']], hist=False, rug=True, label='2006')
-    sns.distplot(imdb_2007[['rating']], hist=False, rug=True, label='2007')
-    sns.distplot(imdb_2008[['rating']], hist=False, rug=True, label='2008')
-    sns.distplot(imdb_2009[['rating']], hist=False, rug=True, label='2009')
-    sns.distplot(imdb_2010[['rating']], hist=False, rug=True, label='2010')
-    sns.distplot(imdb_2011[['rating']], hist=False, rug=True, label='2011')
-    sns.distplot(imdb_2012[['rating']], hist=False, rug=True, label='2012')
-    sns.distplot(imdb_2013[['rating']], hist=False, rug=True, label='2013')
-    sns.distplot(imdb_2014[['rating']], hist=False, rug=True, label='2014')
-    sns.distplot(imdb_2015[['rating']], hist=False, rug=True, label='2015')
-    sns.distplot(imdb_2016[['rating']], hist=False, rug=True, label='2016')
-    sns.distplot(imdb_2017[['rating']], hist=False, rug=True, label='2017')
-    sns.distplot(imdb_2018[['rating']], hist=False, rug=True, label='2018')
-    sns.distplot(imdb_2019[['rating']], hist=False, rug=True, label='2019')
-    sns.distplot(imdb_2020[['rating']], hist=False, rug=True, label='2020')
-    sns.distplot(imdb_2021[['rating']], hist=False, rug=True, label='2021')
-    sns.distplot(imdb_2022[['rating']], hist=False, rug=True, label='2022')
+    df_plot_dictionary = generate_imdb_dictionary(df)
+
+    # we now plot these 20 individual lines onto the same graph
+    for year in df_plot_dictionary:
+        sns.distplot(df_plot_dictionary[year][['rating']], hist=False, rug=True, label=year)
+
     plt.legend()
     plt.xlabel("IMDb rating")
     plt.show()
 
-    # You can compare distribution of the two columns using two-sample Kolmogorov-Smirnov test, it is included in the scipy.stats:
-    # Here we note that none of the p values are less than 0.05 - not statistically significant at 5%
-    ks_2samp_2015_2016 = ks_2samp(imdb_2015['rating'], imdb_2016['rating'])
-    ks_2samp_2015_2021 = ks_2samp(imdb_2015['rating'], imdb_2021['rating'])
-    ks_2samp_2012_2016 = ks_2samp(imdb_2012['rating'], imdb_2016['rating'])
-    ks_2samp_2015_2022 = ks_2samp(imdb_2015['rating'], imdb_2022['rating'])
+    return df_plot_dictionary
+
+
+def two_sample_kolmogorov_smirnov_test(df, year_one, year_two):
+    """
+    Function is to compare distribution of the two columns using two-sample Kolmogorov-Smirnov test, it is included in the scipy.stats:
+
+    Here we look for whether the p values are less than 0.05 - if they are, it means they are statistically significant at 5%
+
+    :param df: input imdb dataframe
+    :param year_one: the first year of the two we want to compare
+    :param year_two: the second year of the two we want to compare
+    :return:
+    """
+    year_one_df = df[year_one]
+    year_two_df = df[year_two]
+    kolmogorov_smirnov_value = ks_2samp(year_one_df['rating'], year_two_df['rating'])
+    return kolmogorov_smirnov_value
 
 
 if __name__ == '__main__':
     df = get_average_imdb_ratings_all_movies()
-    plot_imdb_distributions(df)
+    df = plot_imdb_distributions(df)
+
+    ks_2samp_2015_2016 = two_sample_kolmogorov_smirnov_test(df, '2015', '2016')
+    # ks_2samp_2015_2021 = two_sample_kolmogorov_smirnov_test(df, '2015', '2021')
+    # ks_2samp_2012_2016 = two_sample_kolmogorov_smirnov_test(df, '2012', '2016')
+    # ks_2samp_2015_2022 = two_sample_kolmogorov_smirnov_test(df, '2015', '2022')

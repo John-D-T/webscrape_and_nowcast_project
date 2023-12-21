@@ -1,3 +1,20 @@
+"""
+(refactoring to 3.11)
+PYTHON 3.8 (64 BIT)
+
+pip install bs4
+pip install selenium
+pip install beautifulsoup4
+pip install webdriver_manager
+pip install pandas
+pip install termcolor
+pip install time
+pip install googlemaps
+pip install argparse
+pip install pymongo
+"""
+
+
 import argparse
 import csv
 import os
@@ -8,11 +25,6 @@ from termcolor import colored
 from common.constants import ScrapingProjectConstants as c
 from google_maps_scraper.googlemaps import GoogleMapsScraper
 
-"""
-PYTHON 3.8 (64 BIT) 
-
-pip install bs4 selenium beautifulsoup4 webdriver_manager pandas termcolor time googlemaps argparse pymongo
-"""
 
 price_filter_dict = {'£' : 0 , '££' : 1, '£££' : 2, '££££' : 3}
 HEADER = ['cinema_name', 'category', 'cinema_url', 'postcode_category']
@@ -35,12 +47,12 @@ def csv_writer(source_field, path=c.google_maps_scraper_output):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Maps reviews scraper.')
-    parser.add_argument('--N', type=int, default=10, help='Number of cinema to scrape')
+    parser.add_argument(name_or_flags='--N', type=int, default=10, help='Number of cinema to scrape')
     # parser.add_argument('--i', type=str, default='auxilliary_data/urls_location.txt', help='target URLs files')
-    parser.add_argument('--sort_by', type=str, default='£', help='most_relevant or closest')
-    parser.add_argument('--place', dest='place', action='store_true', help='Scrape place metadata')
-    parser.add_argument('--debug', dest='debug', action='store_true', help='Run scraper using browser graphical interface')
-    parser.add_argument('--source', dest='source', action='store_true', help='Add source url to CSV file (for multiple urls in a single file)')
+    parser.add_argument(name_or_flags='--sort_by', type=str, default='£', help='most_relevant or closest')
+    parser.add_argument(name_or_flags='--place', dest='place', action='store_true', help='Scrape place metadata')
+    parser.add_argument(name_or_flags='--debug', dest='debug', action='store_true', help='Run scraper using browser graphical interface')
+    parser.add_argument(name_or_flags='--source', dest='source', action='store_true', help='Add source url to CSV file (for multiple urls in a single file)')
     parser.set_defaults(place=False, debug=False, source=False)
 
     args = parser.parse_args()

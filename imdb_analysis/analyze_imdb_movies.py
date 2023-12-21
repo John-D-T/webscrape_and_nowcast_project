@@ -1,3 +1,13 @@
+"""
+PYTHON 3.11 (64 BIT)
+
+pip install seaborn
+pip install scipy
+pip install matplotlib
+pip install texttable
+pip install latextable
+"""
+
 import glob
 import os
 
@@ -28,6 +38,9 @@ def plot_imdb_distributions(df, range_start=2004, range_end=2023, range_interval
     """
     Function to plot ratings for all imdb movies over the years
 
+def plot_imdb_distributions(df, range_start=2004, range_end=2023, range_interval=1):
+    """
+    Function to plot ratings for all imdb movies over the years
     :param df: dataframe containing imdb ratings for movies.
     :param range_start: start of year range (default is 2004)
     :param range_end: end of year range (default is 2023)
@@ -56,7 +69,7 @@ def generate_imdb_dictionary_split_by_year(df, range_start, range_end, range_int
     Function which processes a dataframe containing imdb ratings, splits these up by year,
     then returns a dictionary with the key:value pairs being:
         key: year
-        value: dataframe filtered on the 'year_adjusted' equalling that year
+        value: dataframe filtered on the 'year-adjusted' column equalling that year
 
     :param df: dataframe containing imdb ratings for movies.
     :param range_start: start of year range (default is 2004)
@@ -65,10 +78,11 @@ def generate_imdb_dictionary_split_by_year(df, range_start, range_end, range_int
 
     :return: A dictionary containing:
         key: year
-        value: dataframe filtered on the 'year_adjusted' equalling that year
+        value: dataframe filtered on the 'year-adjusted' column equalling that year
     """
     years = [year for year in range(range_start, range_end, range_interval)]
-    return {y: df[df['year_adjusted'] == y] for y in years}
+    return {y: df[df['year-adjusted'] == y] for y in years}
+
 
 
 def two_sample_kolmogorov_smirnov_test(df, year_one, year_two):
@@ -92,7 +106,7 @@ if __name__ == '__main__':
     df = plot_average_imdb_ratings_per_year(gross_filter=1000000, year_adjusted_filter=1999)
     df = plot_imdb_distributions(df)
 
-    ks_2samp_2015_2016 = two_sample_kolmogorov_smirnov_test(df, '2015', '2016')
+    ks_2samp_2015_2016 = two_sample_kolmogorov_smirnov_test(df=df, year_one='2015', year_two='2016')
     # ks_2samp_2015_2021 = two_sample_kolmogorov_smirnov_test(df, '2015', '2021')
     # ks_2samp_2012_2016 = two_sample_kolmogorov_smirnov_test(df, '2012', '2016')
     # ks_2samp_2015_2022 = two_sample_kolmogorov_smirnov_test(df, '2015', '2022')

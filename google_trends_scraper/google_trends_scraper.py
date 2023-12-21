@@ -1,14 +1,15 @@
-from pytrends.request import TrendReq
-import plotly.express as px
-
 """
-PYTHON 3.8 (64 BIT)
+PYTHON 3.11 (64 BIT)
 
-pip install pytrends plotly
+pip install pytrends
+pip install plotly
 
 https://lazarinastoy.com/the-ultimate-guide-to-pytrends-google-trends-api-with-python/
 https://www.npmjs.com/package/google-trends-api#interestByRegion
 """
+
+from pytrends.request import TrendReq
+import plotly.express as px
 
 
 def extract_from_google_trends(word_of_interest):
@@ -38,5 +39,5 @@ def extract_from_google_trends(word_of_interest):
 
 
 if __name__ == '__main__':
-    word_of_interest = 'cinemas nearby'
-    extract_from_google_trends(word_of_interest=word_of_interest)
+    cinemas_nearby = 'cinemas nearby'
+    extract_from_google_trends(word_of_interest=cinemas_nearby)

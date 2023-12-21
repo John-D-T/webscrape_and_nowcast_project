@@ -1,3 +1,12 @@
+"""
+3.11 (64 bit)
+
+pip install scipy
+pip install matplotlib
+pip install seaborn
+pip install pandas
+"""
+
 import pandas as pd
 import os
 import seaborn as sns
@@ -7,15 +16,11 @@ from scipy import stats
 from common.latex_file_generator import save_df_as_image
 from common.file_cleanup import latex_file_cleanup
 
-"""
-3.7 VENV
-pip install scipy matplotlib seaborn pandas
-"""
 
 def plot_imdb_rating_against_box_office(number_of_votes=5000):
     """
     Function to plot the average imdb ratings for movies, in order to see distributions over time. We filter on movies
-    which have more that 5000 user reviews. This is to avoid skew with lots of low grossing/low popularity movies.
+    which have more than 5000 user reviews. This is to avoid skew with lots of low grossing/low popularity movies.
 
     Function to:
 
@@ -60,8 +65,11 @@ def plot_average_imdb_ratings_per_year(number_of_votes_adjusted_filter=None, sav
     2. aggregates the dataframe in order to get the year and average rating for that year
     3. Save the aggregated dataframe to a pdf
 
-    :param user_rating_adjusted: Optional argument. If not none, we filter out movies which contain more user ratings
-    than that value
+    :param number_of_votes_adjusted_filter: number of votes we want to filter movies on (e.g. they have to have at least 1000 votes)
+    :param save_image: Boolean to determine whether we want to save the table as a pdf (using latex)
+    :param gross_filter: total gross (revenue) we want to filter movies on
+    :param year_adjusted_filter: filtering on movies past a certain year
+
     :return: dataframe containing all information on movies in imdb. Columns include:
         - name of the movie
         - when it was released
@@ -76,7 +84,7 @@ def plot_average_imdb_ratings_per_year(number_of_votes_adjusted_filter=None, sav
 
     if save_image:
         # https://stackoverflow.com/questions/44522741/pandas-mean-typeerror-could-not-convert-to-numeric
-        imdb_df_grouped = imdb_df.groupby('year_adjusted')['rating_adjusted'].mean().reset_index()
+        imdb_df_grouped = imdb_df.groupby('year-adjusted')['rating-adjusted'].mean().reset_index()
 
         save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k')
 
@@ -117,15 +125,16 @@ def load_imdb_dataframe_and_apply_filters(number_of_votes_adjusted_filter=None, 
     if gross_filter:
         imdb_df = imdb_df[imdb_df['gross(in $)'] > gross_filter]
 
-    imdb_df['rating_adjusted'] = pd.to_numeric(imdb_df['rating'], errors='coerce').fillna(0)
-    pd.to_numeric(imdb_df['rating_adjusted'])
 
-    imdb_df['year_adjusted'] = pd.to_numeric(imdb_df['year'], errors='coerce').fillna(0)
-    pd.to_numeric(imdb_df['year_adjusted'])
+    imdb_df['rating-adjusted'] = pd.to_numeric(imdb_df['rating'], errors='coerce').fillna(0)
+    pd.to_numeric(imdb_df['rating-adjusted'])
+
+    imdb_df['year-adjusted'] = pd.to_numeric(imdb_df['year'], errors='coerce').fillna(0)
+    pd.to_numeric(imdb_df['year-adjusted'])
 
     if year_adjusted_filter:
-        imdb_df['year_adjusted'] = imdb_df['year_adjusted'].abs()
-        imdb_df = imdb_df[imdb_df['year_adjusted'] > year_adjusted_filter]
+        imdb_df['year-adjusted'] = imdb_df['year-adjusted'].abs()
+        imdb_df = imdb_df[imdb_df['year-adjusted'] > year_adjusted_filter]
 
     return imdb_df
 

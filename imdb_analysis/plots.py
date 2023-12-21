@@ -69,6 +69,7 @@ def plot_average_imdb_ratings_per_year(number_of_votes_adjusted_filter=None, sav
     :param save_image: Boolean to determine whether we want to save the table as a pdf (using latex)
     :param gross_filter: total gross (revenue) we want to filter movies on
     :param year_adjusted_filter: filtering on movies past a certain year
+
     :return: dataframe containing all information on movies in imdb. Columns include:
         - name of the movie
         - when it was released
@@ -123,6 +124,7 @@ def load_imdb_dataframe_and_apply_filters(number_of_votes_adjusted_filter=None, 
 
     if gross_filter:
         imdb_df = imdb_df[imdb_df['gross(in $)'] > gross_filter]
+
 
     imdb_df['rating-adjusted'] = pd.to_numeric(imdb_df['rating'], errors='coerce').fillna(0)
     pd.to_numeric(imdb_df['rating-adjusted'])

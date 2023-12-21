@@ -1,3 +1,12 @@
+"""
+(refactoring to 3.11)
+PYTHON 3.7/8 (64 BIT)
+
+pip install matplotlib
+pip install statsmodels
+pip install pandas
+"""
+
 import matplotlib.pyplot as plt
 from regression_analysis.machine_learning.var_utilities import granger_casuality_test, adf
 from statsmodels.tsa.api import VAR

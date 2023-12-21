@@ -1,13 +1,16 @@
-import os
-from datetime import datetime
-import pandas as pd
-
 """
+(refactoring to 3.11)
 PYTHON 3.8 (64 BIT)
 
 pip install xlrd
 pip install Jinja
 """
+
+
+import os
+from datetime import datetime
+import pandas as pd
+
 
 def creating_clean_df_using_excel():
     bfi_subfolder = 'bfi_data'
@@ -22,7 +25,7 @@ def creating_clean_df_using_excel():
             # check if the file is an .xls file
             print('processing: ' + str(file_name))
             if file_name.endswith('.xls'):
-                # TODO - see if the file content is consistent across each type:
+
                 # case 1 - file name contains 'bfi-uk-box-office' (e.g. bfi-uk-box-office-5-7-April-2013)
                 if 'bfi-uk-box-office' in file_name:
                     # loading important information into a df
@@ -61,7 +64,6 @@ def creating_clean_df_using_excel():
                     if len(file_name.split('-')[5:]) > 4:
                         modified_date = "-".join(file_name.split('-')[6:]).split('.')[0]
 
-                        # convert to datetime object
                         new_date = datetime.strptime(modified_date, '%d-%B-%Y')
 
                         # format as string with leading zeros for day
@@ -71,7 +73,7 @@ def creating_clean_df_using_excel():
                     else:
                         modified_date = "-".join(file_name.split('-')[5:]).split('.')[0]
 
-                        # convert to datetime object
+
                         new_date = datetime.strptime(modified_date, '%d-%B-%Y')
 
                         # format as string with leading zeros for day
@@ -102,7 +104,6 @@ def creating_clean_df_using_excel():
                     # creating a df for the total box office
                     total_box_office_df = box_office_df.iloc[15:16, :]
 
-
                     # making sure all months not abbreviated:
                     for i, j in month_dict.items():
                         file_name = file_name.replace(i, j)
@@ -111,21 +112,18 @@ def creating_clean_df_using_excel():
                     new_file_name = file_name.replace('bfi-weekend-box-office-report', 'bfi_box_office').replace('xls', 'csv')
 
                     # renaming second half of file:
-                    # original string
                     original_date = "-".join(file_name.split('-')[5:]).split('.')[0]
 
                     # a check for file names which are of a different naming convention
-                    # eg. bfi-weekend-box-office-report-2017-09-01-03
+                    # e.g. bfi-weekend-box-office-report-2017-09-01-03
                     if len(str(file_name.split('-')[5])) == 4:
                         if len(file_name.split('-')[5:]) == 4:
                             date_list = file_name.split('-')[5:]
                             del date_list[2]
                             modified_date = "-".join(date_list).split('.')[0]
 
-                            # convert to datetime object
                             new_date = datetime.strptime(modified_date, '%Y-%m-%d')
 
-                            # format as string with leading zeros for day
                             new_date = new_date.strftime('%d-%m-%Y')
 
                             new_file_name = new_file_name.replace(original_date, new_date)
@@ -135,10 +133,8 @@ def creating_clean_df_using_excel():
                             del date_list[1:3]
                             modified_date = "-".join(date_list).split('.')[0]
 
-                            # convert to datetime object
                             new_date = datetime.strptime(modified_date, '%Y-%m-%d')
 
-                            # format as string with leading zeros for day
                             new_date = new_date.strftime('%d-%m-%Y')
 
                             new_file_name = new_file_name.replace(original_date, new_date)
@@ -146,7 +142,6 @@ def creating_clean_df_using_excel():
                     elif len(file_name.split('-')[5:]) > 4:
                         modified_date = "-".join(file_name.split('-')[7:]).split('.')[0]
 
-                        # convert to datetime object
                         new_date = datetime.strptime(modified_date, '%d-%B-%Y')
 
                         # format as string with leading zeros for day
@@ -157,7 +152,6 @@ def creating_clean_df_using_excel():
                     else:
                         modified_date = "-".join(file_name.split('-')[6:]).split('.')[0]
 
-                        # convert to datetime object
                         new_date = datetime.strptime(modified_date, '%d-%B-%Y')
 
                         # format as string with leading zeros for day
@@ -210,7 +204,6 @@ def creating_clean_df_using_excel():
                     if len(file_name.split('-')[6:]) > 4:
                         modified_date = "-".join(file_name.split('-')[8:]).split('.')[0]
 
-                        # convert to datetime object
                         new_date = datetime.strptime(modified_date, '%B-%d-%Y')
 
                         # format as string with leading zeros for day
@@ -221,10 +214,8 @@ def creating_clean_df_using_excel():
                     elif len(file_name.split('-')[6:]) == 3:
                         modified_date = "-".join(file_name.split('-')[7:]).split('.')[0]
 
-                        # convert to datetime object
                         new_date = datetime.strptime(modified_date, '%B%d-%Y')
 
-                        # format as string with leading zeros for day
                         new_date = new_date.strftime('%d-%m-%Y')
 
                         new_file_name = new_file_name.replace(original_date, new_date)
@@ -255,13 +246,13 @@ def compile_cleaned_csv():
         if file_name.startswith('t_'):
             mini_t_df = pd.read_csv(os.path.join(folder_location, file_name))
             mini_t_df['date'] = ("".join(file_name.split('-')[1:]).split('.')[0])
-            # loop to append dataframes
+
             total_box_office_df_compiled = pd.concat([total_box_office_df_compiled, mini_t_df])
         elif file_name.startswith('bfi'):
             subset_df = pd.read_csv(os.path.join(folder_location, file_name))
             subset_df['date'] = "-".join(file_name.split('-')[1:]).split('.')[0]
             subset_df = subset_df.rename(columns={'Film': 'Title'})
-            # loop to append dataframes
+
             subset_box_office_df_compiled = pd.concat([subset_box_office_df_compiled, subset_df])
 
     total_box_office_df_compiled.to_csv(os.path.join(folder_location, 'compiled_total_box_office.csv'))

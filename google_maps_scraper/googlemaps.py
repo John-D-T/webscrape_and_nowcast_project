@@ -1,3 +1,12 @@
+"""
+(refactoring to 3.11)
+PYTHON 3.8 (64 BIT)
+
+pip install bs4
+pip install selenium
+pip install webdriver_manager
+"""
+
 # -*- coding: utf-8 -*-
 import logging
 import time
@@ -14,13 +23,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
-"""
-PYTHON 3.8 (64 BIT) 
-
-pip install bs4
-pip install selenium
-pip install webdriver_manager
-"""
 
 GM_WEBPAGE = 'https://www.google.com/maps/'
 MAX_WAIT = 10

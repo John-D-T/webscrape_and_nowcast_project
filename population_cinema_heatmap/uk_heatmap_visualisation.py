@@ -1,11 +1,12 @@
 """
-PYTHON 3.8 (64 BIT)
+PYTHON 3.11 (64 BIT)
 
-pip install GDAL-3.3.3-cp38-cp38-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+pip install GDAL-3.4.3-cp311-cp311-win_amd64.whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
 pip install rasterio
 pip install pgeocode
-pip install folium (WIP)
+pip install folium
 pip install geopy
+pip install matplotlib
 
 Population heatmap:
 https://towardsdatascience.com/creating-beautiful-population-density-maps-with-python-fcdd84035e06
@@ -48,6 +49,7 @@ def prepare_map_colour_scheme():
 
     return norm, newcmap
 
+
 def generate_heatmap():
     '''
     Plot population of the UK (heatmap)
@@ -61,28 +63,28 @@ def generate_heatmap():
 
     uk_worldpop_raster_tot[uk_worldpop_raster_tot < 0] = None
 
-    heatmap_df = pd.DataFrame(uk_worldpop_raster_tot, columns=[''])
-
     plt.rcParams['figure.figsize'] = 10, 10
     plt.imshow(np.log10(uk_worldpop_raster_tot + 1), norm=norm, cmap=newcmap)
-    bar = plt.colorbar(fraction=0.1)
+    plt.colorbar(fraction=0.1)
 
 
 def generate_postcode_mapping():
     """
         Use csv containing 800~ cinemas (scraped from Google), and plot them (using postcodes) on a map of the UK
-    :return:
+
+        https://towardsdatascience.com/geocode-with-python-161ec1e62b89
+        https://towardsdatascience.com/geopandas-101-plot-any-data-with-a-latitude-and-longitude-on-a-map-98e01944b972
     """
     # load data containing all cinemas in the UK (google scrape)
     cinema_file = "2023-04-27_cinema_and_post_codes.csv"
     list_of_cinemas_df = pd.read_csv(os.path.join(os.path.dirname(os.getcwd()), 'google_maps_scraper', 'output', cinema_file), header=0)
 
-    # SOLN 2: https://towardsdatascience.com/geocode-with-python-161ec1e62b89
-    #         https://towardsdatascience.com/geopandas-101-plot-any-data-with-a-latitude-and-longitude-on-a-map-98e01944b972
-
     locator = Nominatim(user_agent="myGeocoder")
     geocode = RateLimiter(locator.geocode, min_delay_seconds=1)
+
+    # geopy.exc.GeocoderUnavailable at the minute
     list_of_cinemas_df['location'] = list_of_cinemas_df['postcode'].apply(geocode)
+
     list_of_cinemas_df['point'] = list_of_cinemas_df['location'].apply(lambda loc: tuple(loc.point) if loc else None)
 
     list_of_cinemas_df[['latitude', 'longitude', 'altitude']] = pd.DataFrame(list_of_cinemas_df['point'].tolist(), index=list_of_cinemas_df.index)

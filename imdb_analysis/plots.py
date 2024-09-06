@@ -87,7 +87,7 @@ def plot_average_imdb_ratings_per_year(number_of_votes_adjusted_filter=None, sav
 
         save_df_as_image(df=imdb_df_grouped, file_name='imdb_rating_368k')
 
-        latex_file_cleanup(file_name='imdb_rating_368k')
+        latex_file_cleanup(file_name='imdb_rating_368k', extension_list=['aux', 'log', 'tex'])
 
     return imdb_df
 

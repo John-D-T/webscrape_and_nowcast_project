@@ -38,6 +38,9 @@ def plot_imdb_distributions(df, range_start=2004, range_end=2023, range_interval
     """
     Function to plot ratings for all imdb movies over the years
 
+def plot_imdb_distributions(df, range_start=2004, range_end=2023, range_interval=1):
+    """
+    Function to plot ratings for all imdb movies over the years
     :param df: dataframe containing imdb ratings for movies.
     :param range_start: start of year range (default is 2004)
     :param range_end: end of year range (default is 2023)
@@ -79,6 +82,7 @@ def generate_imdb_dictionary_split_by_year(df, range_start, range_end, range_int
     """
     years = [year for year in range(range_start, range_end, range_interval)]
     return {y: df[df['year-adjusted'] == y] for y in years}
+
 
 
 def two_sample_kolmogorov_smirnov_test(df, year_one, year_two):
